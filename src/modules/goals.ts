@@ -1,9 +1,11 @@
-import type { Goal, Module } from "../core/types";
+import type { Goal, LogInfo, Module, Result } from "../core/types";
 import { goals, saveGoals, saveTasks, tasks } from "../core/data";
 import { nextIdFor } from "../core/storage";
 import { splitFirst, toId } from "../core/parse";
+import { problem, say } from "../core/result";
 
-function deleteGoal(goal: Goal): void {
+function deleteGoal(goal: Goal): Result {
+  const detail = `#${goal.id} ${goal.title}`;
   const linked = tasks.filter((t) => t.goalId === goal.id);
   for (const t of linked) {
     t.goalId = null;
@@ -12,18 +14,36 @@ function deleteGoal(goal: Goal): void {
     for (const t of linked) {
       t.goalId = goal.id;
     }
-    console.log("Could not save the tasks. Nothing was deleted.");
-    return;
+    return {
+      ok: false,
+      lines: ["Could not save the tasks. Nothing was deleted."],
+      logs: [{ action: "goal.delete", detail, ok: false }],
+    };
+  }
+  const logs: LogInfo[] = [];
+  if (linked.length > 0) {
+    logs.push({
+      action: "task.unlink",
+      detail: `${linked.length} task(s) from goal #${goal.id}`,
+      ok: true,
+    });
   }
   const index = goals.indexOf(goal);
   goals.splice(index, 1);
   if (saveGoals()) {
-    console.log(`Deleted goal ${goal.id}: ${goal.title}`);
-  } else {
-    goals.splice(index, 0, goal);
-    console.log("The tasks were unlinked, but the goal could not be deleted.");
-    console.log("No task was lost. You can try again.");
+    logs.push({ action: "goal.delete", detail, ok: true });
+    return { ok: true, lines: [`Deleted goal ${goal.id}: ${goal.title}`], logs };
   }
+  goals.splice(index, 0, goal);
+  logs.push({ action: "goal.delete", detail, ok: false });
+  return {
+    ok: false,
+    lines: [
+      "The tasks were unlinked, but the goal could not be deleted.",
+      "No task was lost. You can try again.",
+    ],
+    logs,
+  };
 }
 
 export const goalsModule: Module = {
@@ -35,17 +55,24 @@ export const goalsModule: Module = {
       about: "add a new goal",
       run: (rest) => {
         if (rest === "") {
-          console.log("Write the goal after goal. Example: goal Learn programming");
-          return;
+          return problem("Write the goal after goal. Example: goal Learn programming");
         }
         const goal: Goal = { id: nextIdFor(goals), userId: "local", title: rest };
         goals.push(goal);
+        const detail = `#${goal.id} ${rest}`;
         if (saveGoals()) {
-          console.log(`Added and saved goal ${goal.id}: ${rest}`);
-        } else {
-          goals.pop();
-          console.log("Could not save the goal. Nothing was added.");
+          return {
+            ok: true,
+            lines: [`Added and saved goal ${goal.id}: ${rest}`],
+            logs: [{ action: "goal.add", detail, ok: true }],
+          };
         }
+        goals.pop();
+        return {
+          ok: false,
+          lines: ["Could not save the goal. Nothing was added."],
+          logs: [{ action: "goal.add", detail, ok: false }],
+        };
       },
     },
     {
@@ -54,16 +81,17 @@ export const goalsModule: Module = {
       about: "show all goals and progress",
       run: () => {
         if (goals.length === 0) {
-          console.log("No goals yet.");
-          return;
+          return say("No goals yet.");
         }
+        const lines: string[] = [];
         for (const goal of goals) {
           const goalTasks = tasks.filter((t) => t.goalId === goal.id);
           const doneCount = goalTasks.filter((t) => t.done).length;
-          console.log(
+          lines.push(
             `${goal.id}. ${goal.title}: ${doneCount} of ${goalTasks.length} task(s) done`
           );
         }
+        return say(...lines);
       },
     },
     {
@@ -74,43 +102,52 @@ export const goalsModule: Module = {
         const { first, others } = splitFirst(rest);
         const id = toId(first);
         if (id === null || others === "") {
-          console.log("Use: rename goal <number> <new title>");
-          return;
+          return problem("Use: rename goal <number> <new title>");
         }
         const goal = goals.find((g) => g.id === id);
         if (goal === undefined) {
-          console.log(`There is no goal ${id}.`);
-          return;
+          return problem(`There is no goal ${id}.`);
         }
         const oldTitle = goal.title;
         goal.title = others;
+        const detail = `#${id} ${oldTitle} -> ${others}`;
         if (saveGoals()) {
-          console.log(`Renamed goal ${id}: ${oldTitle} -> ${others}`);
-        } else {
-          goal.title = oldTitle;
-          console.log("Could not save the new title. Nothing was changed.");
+          return {
+            ok: true,
+            lines: [`Renamed goal ${id}: ${oldTitle} -> ${others}`],
+            logs: [{ action: "goal.rename", detail, ok: true }],
+          };
         }
+        goal.title = oldTitle;
+        return {
+          ok: false,
+          lines: ["Could not save the new title. Nothing was changed."],
+          logs: [{ action: "goal.rename", detail, ok: false }],
+        };
       },
     },
     {
       name: "delete goal",
       usage: "delete goal <n>",
       about: "delete a goal (asks first)",
-      run: (rest, ctx) => {
+      run: (rest) => {
         const id = toId(rest);
         if (id === null) {
-          console.log("Use: delete goal <number>");
-          return;
+          return problem("Use: delete goal <number>");
         }
         const goal = goals.find((g) => g.id === id);
         if (goal === undefined) {
-          console.log(`There is no goal ${id}.`);
-          return;
+          return problem(`There is no goal ${id}.`);
         }
         const count = tasks.filter((t) => t.goalId === goal.id).length;
-        console.log(`Delete goal ${goal.id}: ${goal.title}?`);
-        console.log(`${count} task(s) will stay, but without this goal. Type yes to confirm.`);
-        ctx.confirm(() => deleteGoal(goal));
+        return {
+          ok: true,
+          lines: [
+            `Delete goal ${goal.id}: ${goal.title}?`,
+            `${count} task(s) will stay, but without this goal. Type yes to confirm.`,
+          ],
+          confirm: () => deleteGoal(goal),
+        };
       },
     },
   ],

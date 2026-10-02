@@ -1,44 +1,56 @@
-import type { Module, Task } from "../core/types";
+import type { Module, Result, Task } from "../core/types";
 import { goals, saveTasks, tasks } from "../core/data";
 import { nextIdFor } from "../core/storage";
 import { splitFirst, toId } from "../core/parse";
+import { problem, say } from "../core/result";
 
-function setDone(idText: string, value: boolean): void {
+function setDone(idText: string, value: boolean): Result {
   const word = value ? "done" : "reopen";
   const id = toId(idText);
   if (id === null) {
-    console.log(`Use: ${word} <task number>. Example: ${word} 1`);
-    return;
+    return problem(`Use: ${word} <task number>. Example: ${word} 1`);
   }
   const task = tasks.find((t) => t.id === id);
   if (task === undefined) {
-    console.log(`There is no task ${id}.`);
-    return;
+    return problem(`There is no task ${id}.`);
   }
   if (task.done === value) {
-    console.log(value ? `Task ${id} is already done.` : `Task ${id} is not done yet.`);
-    return;
+    return say(value ? `Task ${id} is already done.` : `Task ${id} is not done yet.`);
   }
   task.done = value;
+  const action = value ? "task.done" : "task.reopen";
+  const detail = `#${id} ${task.title}`;
   if (saveTasks()) {
-    console.log(
-      value ? `Marked task ${id} as done: ${task.title}` : `Reopened task ${id}: ${task.title}`
-    );
-  } else {
-    task.done = !value;
-    console.log("Could not save the change. Nothing was changed.");
+    const line = value
+      ? `Marked task ${id} as done: ${task.title}`
+      : `Reopened task ${id}: ${task.title}`;
+    return { ok: true, lines: [line], logs: [{ action, detail, ok: true }] };
   }
+  task.done = !value;
+  return {
+    ok: false,
+    lines: ["Could not save the change. Nothing was changed."],
+    logs: [{ action, detail, ok: false }],
+  };
 }
 
-function deleteTask(task: Task): void {
+function deleteTask(task: Task): Result {
   const index = tasks.indexOf(task);
+  const detail = `#${task.id} ${task.title}`;
   tasks.splice(index, 1);
   if (saveTasks()) {
-    console.log(`Deleted task ${task.id}: ${task.title}`);
-  } else {
-    tasks.splice(index, 0, task);
-    console.log("Could not save. Nothing was deleted.");
+    return {
+      ok: true,
+      lines: [`Deleted task ${task.id}: ${task.title}`],
+      logs: [{ action: "task.delete", detail, ok: true }],
+    };
   }
+  tasks.splice(index, 0, task);
+  return {
+    ok: false,
+    lines: ["Could not save. Nothing was deleted."],
+    logs: [{ action: "task.delete", detail, ok: false }],
+  };
 }
 
 export const tasksModule: Module = {
@@ -50,8 +62,7 @@ export const tasksModule: Module = {
       about: "add a new task",
       run: (rest) => {
         if (rest === "") {
-          console.log("Write the task after add. Example: add Buy bread");
-          return;
+          return problem("Write the task after add. Example: add Buy bread");
         }
         const task: Task = {
           id: nextIdFor(tasks),
@@ -61,12 +72,20 @@ export const tasksModule: Module = {
           goalId: null,
         };
         tasks.push(task);
+        const detail = `#${task.id} ${rest}`;
         if (saveTasks()) {
-          console.log(`Added and saved task ${task.id}: ${rest}`);
-        } else {
-          tasks.pop();
-          console.log("Could not save the task. Nothing was added.");
+          return {
+            ok: true,
+            lines: [`Added and saved task ${task.id}: ${rest}`],
+            logs: [{ action: "task.add", detail, ok: true }],
+          };
         }
+        tasks.pop();
+        return {
+          ok: false,
+          lines: ["Could not save the task. Nothing was added."],
+          logs: [{ action: "task.add", detail, ok: false }],
+        };
       },
     },
     {
@@ -75,15 +94,16 @@ export const tasksModule: Module = {
       about: "show all tasks",
       run: () => {
         if (tasks.length === 0) {
-          console.log("No tasks yet.");
-          return;
+          return say("No tasks yet.");
         }
+        const lines: string[] = [];
         for (const task of tasks) {
           const goal = goals.find((g) => g.id === task.goalId);
           const suffix = goal === undefined ? "" : `  [goal: ${goal.title}]`;
           const mark = task.done ? "[x]" : "[ ]";
-          console.log(`${task.id}. ${mark} ${task.title}${suffix}`);
+          lines.push(`${task.id}. ${mark} ${task.title}${suffix}`);
         }
+        return say(...lines);
       },
     },
     {
@@ -107,27 +127,32 @@ export const tasksModule: Module = {
         const taskId = Number(parts[0]);
         const goalId = Number(parts[1]);
         if (parts.length !== 2 || !Number.isInteger(taskId) || !Number.isInteger(goalId)) {
-          console.log("Use: link <task number> <goal number>. Example: link 1 1");
-          return;
+          return problem("Use: link <task number> <goal number>. Example: link 1 1");
         }
         const task = tasks.find((t) => t.id === taskId);
         const goal = goals.find((g) => g.id === goalId);
         if (task === undefined) {
-          console.log(`There is no task ${taskId}.`);
-          return;
+          return problem(`There is no task ${taskId}.`);
         }
         if (goal === undefined) {
-          console.log(`There is no goal ${goalId}.`);
-          return;
+          return problem(`There is no goal ${goalId}.`);
         }
         const oldGoalId = task.goalId;
         task.goalId = goal.id;
+        const detail = `#${task.id} ${task.title} -> goal #${goal.id}`;
         if (saveTasks()) {
-          console.log(`Linked task ${task.id} to goal ${goal.id}: ${goal.title}`);
-        } else {
-          task.goalId = oldGoalId;
-          console.log("Could not save the link. Nothing was changed.");
+          return {
+            ok: true,
+            lines: [`Linked task ${task.id} to goal ${goal.id}: ${goal.title}`],
+            logs: [{ action: "task.link", detail, ok: true }],
+          };
         }
+        task.goalId = oldGoalId;
+        return {
+          ok: false,
+          lines: ["Could not save the link. Nothing was changed."],
+          logs: [{ action: "task.link", detail, ok: false }],
+        };
       },
     },
     {
@@ -138,41 +163,48 @@ export const tasksModule: Module = {
         const { first, others } = splitFirst(rest);
         const id = toId(first);
         if (id === null || others === "") {
-          console.log("Use: rename task <number> <new title>");
-          return;
+          return problem("Use: rename task <number> <new title>");
         }
         const task = tasks.find((t) => t.id === id);
         if (task === undefined) {
-          console.log(`There is no task ${id}.`);
-          return;
+          return problem(`There is no task ${id}.`);
         }
         const oldTitle = task.title;
         task.title = others;
+        const detail = `#${id} ${oldTitle} -> ${others}`;
         if (saveTasks()) {
-          console.log(`Renamed task ${id}: ${oldTitle} -> ${others}`);
-        } else {
-          task.title = oldTitle;
-          console.log("Could not save the new title. Nothing was changed.");
+          return {
+            ok: true,
+            lines: [`Renamed task ${id}: ${oldTitle} -> ${others}`],
+            logs: [{ action: "task.rename", detail, ok: true }],
+          };
         }
+        task.title = oldTitle;
+        return {
+          ok: false,
+          lines: ["Could not save the new title. Nothing was changed."],
+          logs: [{ action: "task.rename", detail, ok: false }],
+        };
       },
     },
     {
       name: "delete task",
       usage: "delete task <n>",
       about: "delete a task (asks first)",
-      run: (rest, ctx) => {
+      run: (rest) => {
         const id = toId(rest);
         if (id === null) {
-          console.log("Use: delete task <number>");
-          return;
+          return problem("Use: delete task <number>");
         }
         const task = tasks.find((t) => t.id === id);
         if (task === undefined) {
-          console.log(`There is no task ${id}.`);
-          return;
+          return problem(`There is no task ${id}.`);
         }
-        console.log(`Delete task ${task.id}: ${task.title}? Type yes to confirm.`);
-        ctx.confirm(() => deleteTask(task));
+        return {
+          ok: true,
+          lines: [`Delete task ${task.id}: ${task.title}? Type yes to confirm.`],
+          confirm: () => deleteTask(task),
+        };
       },
     },
   ],

@@ -1,8 +1,9 @@
 import * as fs from "node:fs";
-import type { Goal, Module, Task } from "../core/types";
+import type { Goal, Module, Result, Task } from "../core/types";
 import { GOALS_FILE, TASKS_FILE, goals, replaceData, tasks } from "../core/data";
 import { readJsonArray, saveJsonArray } from "../core/storage";
 import { toId } from "../core/parse";
+import { problem, say } from "../core/result";
 
 const BACKUP_DIR = "backups";
 
@@ -86,33 +87,60 @@ function describeBackup(name: string): string {
   return `${t.length} task(s), ${g.length} goal(s)`;
 }
 
-function doRestore(name: string, newTasks: Task[], newGoals: Goal[]): void {
+function doRestore(name: string, newTasks: Task[], newGoals: Goal[]): Result {
   // 1. Save a copy of the current data first.
   const oldTasks = tasks.map((t) => ({ ...t }));
   const oldGoals = goals.map((g) => ({ ...g }));
   const safety = writeBackup("before-restore_", oldTasks, oldGoals);
   if (safety === null) {
-    console.log("Could not save a safety copy of your current data.");
-    console.log("Nothing was restored.");
-    return;
+    return {
+      ok: false,
+      lines: [
+        "Could not save a safety copy of your current data.",
+        "Nothing was restored.",
+      ],
+      logs: [{ action: "backup.restore", detail: `${name}; no safety copy`, ok: false }],
+    };
   }
   // 2. Write the backup over the live files.
   const ok = saveJsonArray(TASKS_FILE, newTasks) && saveJsonArray(GOALS_FILE, newGoals);
   if (!ok) {
     const back = saveJsonArray(TASKS_FILE, oldTasks) && saveJsonArray(GOALS_FILE, oldGoals);
     if (back) {
-      console.log("Could not restore. I put your previous data back.");
-    } else {
-      console.log("Could not restore, and could not put your previous data back.");
-      console.log(`Your previous data is safe in ${BACKUP_DIR}/${safety}.`);
-      console.log("Copy its two files over tasks.json and goals.json.");
+      return {
+        ok: false,
+        lines: ["Could not restore. I put your previous data back."],
+        logs: [{ action: "backup.restore", detail: `${name}; rolled back`, ok: false }],
+      };
     }
-    return;
+    return {
+      ok: false,
+      lines: [
+        "Could not restore, and could not put your previous data back.",
+        `Your previous data is safe in ${BACKUP_DIR}/${safety}.`,
+        "Copy its two files over tasks.json and goals.json.",
+      ],
+      logs: [
+        {
+          action: "backup.restore",
+          detail: `${name}; rollback failed; previous data in ${safety}`,
+          ok: false,
+        },
+      ],
+    };
   }
   // 3. Update memory.
   replaceData(newTasks, newGoals);
-  console.log(`Restored backup ${name}.`);
-  console.log(`A copy of your previous data is in ${BACKUP_DIR}/${safety}.`);
+  return {
+    ok: true,
+    lines: [
+      `Restored backup ${name}.`,
+      `A copy of your previous data is in ${BACKUP_DIR}/${safety}.`,
+    ],
+    logs: [
+      { action: "backup.restore", detail: `${name}; previous data saved as ${safety}`, ok: true },
+    ],
+  };
 }
 
 export const backupModule: Module = {
@@ -125,12 +153,19 @@ export const backupModule: Module = {
       run: () => {
         const name = writeBackup("", tasks, goals);
         if (name === null) {
-          console.log("Could not save the backup. Nothing was changed.");
-          return;
+          return {
+            ok: false,
+            lines: ["Could not save the backup. Nothing was changed."],
+            logs: [{ action: "backup.create", detail: "could not save", ok: false }],
+          };
         }
-        console.log(
-          `Backup saved: ${BACKUP_DIR}/${name} (${tasks.length} task(s), ${goals.length} goal(s))`
-        );
+        return {
+          ok: true,
+          lines: [
+            `Backup saved: ${BACKUP_DIR}/${name} (${tasks.length} task(s), ${goals.length} goal(s))`,
+          ],
+          logs: [{ action: "backup.create", detail: name, ok: true }],
+        };
       },
     },
     {
@@ -140,43 +175,45 @@ export const backupModule: Module = {
       run: () => {
         const names = listBackups();
         if (names.length === 0) {
-          console.log("No backups yet. Type backup to make one.");
-          return;
+          return say("No backups yet. Type backup to make one.");
         }
-        console.log("Backups (oldest first):");
+        const lines = ["Backups (oldest first):"];
         names.forEach((name, i) => {
-          console.log(`${i + 1}. ${name}  (${describeBackup(name)})`);
+          lines.push(`${i + 1}. ${name}  (${describeBackup(name)})`);
         });
+        return say(...lines);
       },
     },
     {
       name: "restore",
       usage: "restore <n or name>",
       about: "bring back a backup (asks first)",
-      run: (rest, ctx) => {
+      run: (rest) => {
         if (rest === "") {
-          console.log("Use: restore <number or name>. Type backups to see them.");
-          return;
+          return problem("Use: restore <number or name>. Type backups to see them.");
         }
         const names = listBackups();
         const id = toId(rest);
         const byNumber = id !== null && id >= 1 && id <= names.length ? names[id - 1] : undefined;
         const name = byNumber ?? names.find((n) => n === rest);
         if (name === undefined) {
-          console.log(`There is no backup "${rest}". Type backups to see them.`);
-          return;
+          return problem(`There is no backup "${rest}". Type backups to see them.`);
         }
         const dir = `${BACKUP_DIR}/${name}`;
         const t = readJsonArray<Task>(`${dir}/tasks.json`);
         const g = readJsonArray<Goal>(`${dir}/goals.json`);
         if (t === null || g === null) {
-          console.log("This backup is damaged. Nothing was restored.");
-          return;
+          return problem("This backup is damaged. Nothing was restored.");
         }
-        console.log(`Restore backup ${name} (${t.length} task(s), ${g.length} goal(s))?`);
-        console.log("Your current data will be replaced. I will save a copy of it first.");
-        console.log("Type yes to confirm.");
-        ctx.confirm(() => doRestore(name, t, g));
+        return {
+          ok: true,
+          lines: [
+            `Restore backup ${name} (${t.length} task(s), ${g.length} goal(s))?`,
+            "Your current data will be replaced. I will save a copy of it first.",
+            "Type yes to confirm.",
+          ],
+          confirm: () => doRestore(name, t, g),
+        };
       },
     },
   ],

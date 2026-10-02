@@ -1,5 +1,6 @@
 import * as readline from "node:readline";
-import type { Command, Context, Module } from "./types";
+import type { Command, Module, Result } from "./types";
+import { appendLog } from "./log";
 
 export function startApp(modules: Module[], greeting: () => string): void {
   const commands: Command[] = [];
@@ -14,12 +15,30 @@ export function startApp(modules: Module[], greeting: () => string): void {
     output: process.stdout,
   });
 
-  let pending: (() => void) | null = null;
-  const ctx: Context = {
-    confirm: (action) => {
-      pending = action;
-    },
-  };
+  let pending: (() => Result) | null = null;
+
+  // Shows a result, writes its log entries, and remembers a question if there is one.
+  function show(result: Result): void {
+    for (const line of result.lines) {
+      console.log(line);
+    }
+    for (const info of result.logs ?? []) {
+      const saved = appendLog({
+        time: new Date().toISOString(),
+        actor: info.actor ?? "user",
+        action: info.action,
+        detail: info.detail,
+        ok: info.ok,
+      });
+      if (!saved) {
+        console.log("Note: I could not write to the activity log.");
+        break;
+      }
+    }
+    if (result.confirm !== undefined) {
+      pending = result.confirm;
+    }
+  }
 
   function showHelp(): void {
     console.log("Commands:");
@@ -56,7 +75,7 @@ export function startApp(modules: Module[], greeting: () => string): void {
       console.log(`I did not understand "${word}". Type help.`);
       return;
     }
-    command.run(text.slice(command.name.length).trim(), ctx);
+    show(command.run(text.slice(command.name.length).trim()));
   }
 
   rl.setPrompt("anzu> ");
@@ -74,7 +93,7 @@ export function startApp(modules: Module[], greeting: () => string): void {
       const action = pending;
       pending = null;
       if (text === "yes") {
-        action();
+        show(action());
       } else {
         console.log("Cancelled. Nothing was changed.");
       }
