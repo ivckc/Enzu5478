@@ -1,8 +1,8 @@
 import type { Goal, Task } from "./types";
 import { readJsonArray, saveJsonArray } from "./storage";
 
-const TASKS_FILE = "tasks.json";
-const GOALS_FILE = "goals.json";
+export const TASKS_FILE = "tasks.json";
+export const GOALS_FILE = "goals.json";
 
 export const tasks: Task[] = [];
 export const goals: Goal[] = [];
@@ -31,4 +31,13 @@ export function saveTasks(): boolean {
 
 export function saveGoals(): boolean {
   return saveJsonArray(GOALS_FILE, goals);
+}
+
+// Replaces what is in memory (used after restoring a backup).
+export function replaceData(newTasks: Task[], newGoals: Goal[]): void {
+  for (const task of newTasks) {
+    task.goalId = task.goalId ?? null;
+  }
+  tasks.splice(0, tasks.length, ...newTasks);
+  goals.splice(0, goals.length, ...newGoals);
 }

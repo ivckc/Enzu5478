@@ -76,7 +76,7 @@ export function startApp(modules: Module[], greeting: () => string): void {
       if (text === "yes") {
         action();
       } else {
-        console.log("Cancelled. Nothing was deleted.");
+        console.log("Cancelled. Nothing was changed.");
       }
       rl.prompt();
       return;
