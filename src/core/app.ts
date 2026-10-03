@@ -1,12 +1,29 @@
 import * as readline from "node:readline";
-import type { Command, Module, Result } from "./types";
+import type { Command, Job, Module, Result } from "./types";
 import { appendLog } from "./log";
 
 export function startApp(modules: Module[], greeting: () => string): void {
+  // 1. Let each module load its own data. Stop if something is damaged.
+  for (const mod of modules) {
+    if (mod.init !== undefined) {
+      const problems = mod.init();
+      if (problems.length > 0) {
+        for (const line of problems) {
+          console.log(line);
+        }
+        process.exit(1);
+      }
+    }
+  }
+
   const commands: Command[] = [];
+  const jobs: Job[] = [];
   for (const mod of modules) {
     for (const command of mod.commands) {
       commands.push(command);
+    }
+    for (const job of mod.jobs ?? []) {
+      jobs.push(job);
     }
   }
 
@@ -37,6 +54,30 @@ export function startApp(modules: Module[], greeting: () => string): void {
     }
     if (result.confirm !== undefined) {
       pending = result.confirm;
+    }
+  }
+
+  // Shows something that was not asked for (like a reminder), without
+  // breaking the line the user is typing.
+  function showByItself(result: Result): void {
+    const tty = process.stdout.isTTY === true;
+    if (tty) {
+      readline.cursorTo(process.stdout, 0);
+      readline.clearLine(process.stdout, 0);
+    }
+    show(result);
+    rl.prompt(true);
+  }
+
+  function runJob(job: Job): Result | null {
+    try {
+      return job.run();
+    } catch {
+      return {
+        ok: false,
+        lines: [`Note: the background job "${job.name}" had a problem.`],
+        logs: [{ action: "job.error", detail: job.name, ok: false, actor: "anzu" }],
+      };
     }
   }
 
@@ -80,7 +121,34 @@ export function startApp(modules: Module[], greeting: () => string): void {
 
   rl.setPrompt("anzu> ");
   console.log(greeting());
+
+  // Run every job once now (this shows reminders that came due while we were closed).
+  for (const job of jobs) {
+    const result = runJob(job);
+    if (result !== null) {
+      show(result);
+    }
+  }
   rl.prompt();
+
+  // Then run them again and again.
+  const timers: ReturnType<typeof setInterval>[] = [];
+  for (const job of jobs) {
+    timers.push(
+      setInterval(() => {
+        const result = runJob(job);
+        if (result !== null) {
+          showByItself(result);
+        }
+      }, job.everyMs)
+    );
+  }
+  // When the program closes, stop the timers so it can end.
+  rl.on("close", () => {
+    for (const timer of timers) {
+      clearInterval(timer);
+    }
+  });
 
   rl.on("line", (line: string) => {
     const text = line.trim();

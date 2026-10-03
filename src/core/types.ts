@@ -36,8 +36,20 @@ export type Command = {
   run: (rest: string) => Result;
 };
 
+// Something that runs by itself, again and again (for example: check reminders).
+// Return null when there is nothing to tell the user.
+export type Job = {
+  name: string;
+  everyMs: number;
+  run: () => Result | null;
+};
+
 // A module is a group of commands that belong together.
 export type Module = {
   name: string;
   commands: Command[];
+  // Runs once at start. Return problems to stop the program (empty list = fine).
+  init?: () => string[];
+  // Things the module does by itself while the program is running.
+  jobs?: Job[];
 };
