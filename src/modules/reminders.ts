@@ -1,4 +1,4 @@
-import type { Job, LogInfo, Module, Result } from "../core/types";
+import type { Job, LogInfo, Module, Notice, Result } from "../core/types";
 import { nextIdFor, readJsonArray, saveJsonArray } from "../core/storage";
 import { splitFirst, toId } from "../core/parse";
 import { problem, say } from "../core/result";
@@ -167,6 +167,7 @@ function checkReminders(): Result | null {
   }
   const lines: string[] = [];
   const logs: LogInfo[] = [];
+  const notices: Notice[] = [];
   for (const r of due) {
     r.status = "fired";
     r.firedAt = new Date(nowMs).toISOString();
@@ -175,6 +176,12 @@ function checkReminders(): Result | null {
     lines.push(
       late ? `[REMINDER] ${r.text} (was due ${formatLocal(dueDate)})` : `[REMINDER] ${r.text}`
     );
+    notices.push({
+      title: "Anzu reminder",
+      message: late ? `${r.text} (was due ${formatLocal(dueDate)})` : r.text,
+      priority: 4,
+      tags: ["alarm_clock"],
+    });
     logs.push({
       action: "reminder.fire",
       detail: `#${r.id} ${r.text}${late ? " (late)" : ""}`,
@@ -192,7 +199,7 @@ function checkReminders(): Result | null {
       actor: "anzu",
     });
   }
-  return { ok: true, lines, logs };
+  return { ok: true, lines, logs, notices };
 }
 
 const reminderJob: Job = {

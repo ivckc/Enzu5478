@@ -11,7 +11,7 @@ export function startApp(modules: Module[], greeting: () => string): void {
         for (const line of problems) {
           console.log(line);
         }
-        process.exit(1);
+        process.exit(3);
       }
     }
   }
@@ -33,8 +33,9 @@ export function startApp(modules: Module[], greeting: () => string): void {
   });
 
   let pending: (() => Result) | null = null;
+  let closed = false;
 
-  // Shows a result, writes its log entries, and remembers a question if there is one.
+  // Shows a result, writes its log entries, passes its notices on, and remembers a question.
   function show(result: Result): void {
     for (const line of result.lines) {
       console.log(line);
@@ -52,6 +53,16 @@ export function startApp(modules: Module[], greeting: () => string): void {
         break;
       }
     }
+    for (const notice of result.notices ?? []) {
+      for (const mod of modules) {
+        if (mod.onNotice !== undefined) {
+          const extra = mod.onNotice(notice);
+          if (extra !== null) {
+            show(extra);
+          }
+        }
+      }
+    }
     if (result.confirm !== undefined) {
       pending = result.confirm;
     }
@@ -60,6 +71,10 @@ export function startApp(modules: Module[], greeting: () => string): void {
   // Shows something that was not asked for (like a reminder), without
   // breaking the line the user is typing.
   function showByItself(result: Result): void {
+    if (closed || result.lines.length === 0) {
+      show(result);
+      return;
+    }
     const tty = process.stdout.isTTY === true;
     if (tty) {
       readline.cursorTo(process.stdout, 0);
@@ -69,15 +84,43 @@ export function startApp(modules: Module[], greeting: () => string): void {
     rl.prompt(true);
   }
 
-  function runJob(job: Job): Result | null {
+  function jobProblem(job: Job): Result {
+    return {
+      ok: false,
+      lines: [`Note: the background job "${job.name}" had a problem.`],
+      logs: [{ action: "job.error", detail: job.name, ok: false, actor: "anzu" }],
+    };
+  }
+
+  // A job that is still working (for example, waiting for the network) is not started again.
+  const busy = new Set<Job>();
+
+  function startJob(job: Job, atStart: boolean): void {
+    if (busy.has(job)) {
+      return;
+    }
+    let out: Result | null | Promise<Result | null>;
     try {
-      return job.run();
+      out = job.run();
     } catch {
-      return {
-        ok: false,
-        lines: [`Note: the background job "${job.name}" had a problem.`],
-        logs: [{ action: "job.error", detail: job.name, ok: false, actor: "anzu" }],
-      };
+      out = jobProblem(job);
+    }
+    if (out instanceof Promise) {
+      busy.add(job);
+      out
+        .catch(() => jobProblem(job))
+        .then((result) => {
+          busy.delete(job);
+          if (result !== null) {
+            showByItself(result);
+          }
+        });
+    } else if (out !== null) {
+      if (atStart) {
+        show(out);
+      } else {
+        showByItself(out);
+      }
     }
   }
 
@@ -124,27 +167,18 @@ export function startApp(modules: Module[], greeting: () => string): void {
 
   // Run every job once now (this shows reminders that came due while we were closed).
   for (const job of jobs) {
-    const result = runJob(job);
-    if (result !== null) {
-      show(result);
-    }
+    startJob(job, true);
   }
   rl.prompt();
 
   // Then run them again and again.
   const timers: ReturnType<typeof setInterval>[] = [];
   for (const job of jobs) {
-    timers.push(
-      setInterval(() => {
-        const result = runJob(job);
-        if (result !== null) {
-          showByItself(result);
-        }
-      }, job.everyMs)
-    );
+    timers.push(setInterval(() => startJob(job, false), job.everyMs));
   }
   // When the program closes, stop the timers so it can end.
   rl.on("close", () => {
+    closed = true;
     for (const timer of timers) {
       clearInterval(timer);
     }

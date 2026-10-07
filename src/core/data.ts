@@ -14,7 +14,7 @@ export function loadData(): void {
     console.log("One of the data files is damaged (tasks.json or goals.json).");
     console.log("I stopped so I do not overwrite it.");
     console.log("Fix it or rename it, then run me again.");
-    process.exit(1);
+    process.exit(3);
   }
   for (const task of loadedTasks) {
     task.goalId = task.goalId ?? null;

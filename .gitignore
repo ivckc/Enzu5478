@@ -4,3 +4,7 @@ goals.json
 backups/
 activity.jsonl
 reminders.json
+notify.json
+outbox.json
+anzu.lock
+anzu-run.cmd

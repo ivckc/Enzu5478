@@ -20,11 +20,20 @@ export type LogInfo = {
   actor?: "user" | "anzu"; // who did it (default: user)
 };
 
+// A message that should also reach the user outside this window (for example, on the phone).
+export type Notice = {
+  title: string;
+  message: string;
+  priority?: 1 | 2 | 3 | 4 | 5; // 1 = lowest, 3 = normal, 5 = highest
+  tags?: string[];
+};
+
 // What every command returns. The core decides how to show it.
 export type Result = {
   ok: boolean;
   lines: string[]; // what to tell the user
   logs?: LogInfo[]; // what to write in the activity log
+  notices?: Notice[]; // what to also send outside this window
   confirm?: () => Result; // if set: wait for "yes", then run this
 };
 
@@ -41,7 +50,7 @@ export type Command = {
 export type Job = {
   name: string;
   everyMs: number;
-  run: () => Result | null;
+  run: () => Result | null | Promise<Result | null>;
 };
 
 // A module is a group of commands that belong together.
@@ -52,4 +61,6 @@ export type Module = {
   init?: () => string[];
   // Things the module does by itself while the program is running.
   jobs?: Job[];
+  // Called when any module says "tell the user this". Return a Result only if something went wrong.
+  onNotice?: (notice: Notice) => Result | null;
 };
