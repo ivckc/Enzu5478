@@ -8,6 +8,7 @@ import { notifyModule } from "./modules/notify";
 import { autostartModule } from "./modules/autostart";
 import { systemModule } from "./modules/system";
 import { backupModule } from "./modules/backup";
+import { webModule } from "./modules/web";
 import { activityModule } from "./modules/activity";
 import { helloModule } from "./modules/hello";
 
@@ -32,6 +33,7 @@ startApp(
     systemModule,
     backupModule,
     activityModule,
+    webModule,
     helloModule,
   ],
   () => {

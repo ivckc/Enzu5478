@@ -1,9 +1,16 @@
+export type Priority = "urgent" | "medium" | "normal";
+export type Subtask = { id: number; title: string; done: boolean };
+
 export type Task = {
   id: number;
   userId: string;
   title: string;
   done: boolean;
   goalId: number | null;
+  priority: Priority;
+  due: string | null; // YYYY-MM-DD
+  dueTime: string | null; // HH:MM
+  subtasks: Subtask[];
 };
 
 export type Goal = {
@@ -62,5 +69,7 @@ export type Module = {
   // Things the module does by itself while the program is running.
   jobs?: Job[];
   // Called when any module says "tell the user this". Return a Result only if something went wrong.
+  // What the web page may show about this module (never secrets).
+  snapshot?: () => unknown;
   onNotice?: (notice: Notice) => Result | null;
 };

@@ -8,3 +8,4 @@ notify.json
 outbox.json
 anzu.lock
 anzu-run.cmd
+*.lnk

@@ -331,6 +331,7 @@ export const notifyModule: Module = {
     return [];
   },
   jobs: [sendJob],
+  snapshot: () => ({ enabled: config.enabled, ready: config.topic !== null, waiting: outbox.length, problem: outbox.map((i) => i.lastError).find((e) => e !== null) ?? null }),
   onNotice: (notice) => {
     if (!isReady()) {
       return null;

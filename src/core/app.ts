@@ -1,6 +1,8 @@
 import * as readline from "node:readline";
 import type { Command, Job, Module, Result } from "./types";
 import { appendLog } from "./log";
+import { setRunner, setSnapshotSource } from "./snapshot";
+import type { Outcome } from "./snapshot";
 
 export function startApp(modules: Module[], greeting: () => string): void {
   // 1. Let each module load its own data. Stop if something is damaged.
@@ -27,6 +29,16 @@ export function startApp(modules: Module[], greeting: () => string): void {
     }
   }
 
+  setSnapshotSource(() => {
+    const out: Record<string, unknown> = {};
+    for (const mod of modules) {
+      if (mod.snapshot !== undefined) {
+        out[mod.name] = mod.snapshot();
+      }
+    }
+    return out;
+  });
+
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -36,8 +48,8 @@ export function startApp(modules: Module[], greeting: () => string): void {
   let closed = false;
 
   // Shows a result, writes its log entries, passes its notices on, and remembers a question.
-  function show(result: Result): void {
-    for (const line of result.lines) {
+  function show(result: Result, print = true, ask = true): void {
+    for (const line of print ? result.lines : []) {
       console.log(line);
     }
     for (const info of result.logs ?? []) {
@@ -63,10 +75,30 @@ export function startApp(modules: Module[], greeting: () => string): void {
         }
       }
     }
-    if (result.confirm !== undefined) {
+    if (result.confirm !== undefined && ask) {
       pending = result.confirm;
     }
   }
+
+  // Used by the web page: same effects (log, notices), but nothing is printed here
+  // and the question is handed back to the page, not to this window.
+  function toOutcome(result: Result): Outcome {
+    show(result, false, false);
+    const next = result.confirm;
+    return {
+      ok: result.ok,
+      lines: result.lines,
+      confirm: next === undefined ? undefined : () => toOutcome(next()),
+    };
+  }
+
+  setRunner((text) => {
+    const command = findCommand(text);
+    if (command === null) {
+      return { ok: false, lines: ["I did not understand that command."] };
+    }
+    return toOutcome(command.run(text.slice(command.name.length).trim()));
+  });
 
   // Shows something that was not asked for (like a reminder), without
   // breaking the line the user is typing.

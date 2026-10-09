@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="anzu-token" content="__TOKEN__"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A.N.Z.U</title>
+<style>
+:root{--bg:#0b0605;--ln:#5a3a28;--tx:#f1e4d8;--mu:#a88a76;--ac:#d98a60;--ok:#7fc79a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 0,#2a140c,#0b0605 60%);color:var(--tx);font-family:Tahoma,"Segoe UI",sans-serif;min-height:100vh}
+.app{display:grid;grid-template-columns:260px 1fr 300px;gap:14px;padding:16px;min-height:100vh}
+.box{border:1px solid var(--ln);background:#120a07cc;padding:16px;border-radius:2px}
+.cap{font:11px monospace;letter-spacing:2px;color:var(--ac);margin:0 0 10px;direction:ltr;text-align:right}
+h1{margin:0 0 14px;font-size:26px}.logo{font:20px Georgia,serif;letter-spacing:8px;text-align:center;color:var(--ac)}
+nav a{display:flex;justify-content:space-between;padding:9px 10px;color:var(--mu);text-decoration:none;cursor:pointer;border-inline-start:2px solid transparent}
+nav a.on{color:var(--tx);background:#d98a6022;border-color:var(--ac)}nav a.off{opacity:.4;cursor:default}nav small{font-size:10px;border:1px solid var(--ln);padding:0 5px}
+#raven{width:200px;margin:8px auto;filter:sepia(1) saturate(2.2) hue-rotate(-38deg) brightness(.9) drop-shadow(0 0 14px #d98a6066)}
+#raven svg{width:100%;height:auto;display:block}
+.row{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid var(--ln);padding:11px 12px;margin-bottom:8px;background:#0b0605}
+.row.done b{text-decoration:line-through;color:var(--mu)}.row small{color:var(--mu)}.chip{border:1px solid var(--ln);padding:2px 8px;font-size:12px;color:var(--ac)}
+.ring{--p:0;width:120px;height:120px;border-radius:50%;margin:8px auto;background:conic-gradient(var(--ac) calc(var(--p)*1%),#2a1a12 0);display:grid;place-items:center}
+.ring i{width:96px;height:96px;border-radius:50%;background:#120a07;display:grid;place-items:center;font:normal 22px sans-serif}
+.hello{text-align:center}.hello h1{font-size:30px}.hello p{color:var(--mu)}.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.act{border-inline-start:2px solid var(--ln);padding:0 10px 10px;margin-inline-start:6px}.act.bad b{color:#e08a8a}.act small{display:block;color:var(--mu)}
+select,button{background:#0b0605;color:var(--tx);border:1px solid var(--ln);padding:6px 10px;font:inherit}
+#raven.st-alert{animation:pulse .9s ease-in-out infinite}@keyframes pulse{50%{filter:sepia(1) saturate(3) hue-rotate(-38deg) brightness(1.25) drop-shadow(0 0 30px #ffb080)}}
+#raven svg #eyes{transform-box:fill-box;transform-origin:center;animation:blink 5s infinite}@keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+#raven.alert svg #beak-lower{transform-box:fill-box;transform-origin:top;animation:talk .35s ease-in-out infinite}@keyframes talk{50%{transform:rotate(7deg)}}
+#raven.focus{animation:breathe 2s ease-in-out infinite}@keyframes breathe{50%{transform:scale(1.03)}}
+.tabs{display:flex;gap:8px;margin-bottom:14px}.tabs .chip{cursor:pointer;padding:5px 14px}.tabs .on{background:#d98a6033;color:var(--tx)}
+#home{display:none;position:fixed;inset:0;background:radial-gradient(ellipse at 50% 38%,#24100a,#070403 62%);overflow:hidden}.home #home{display:block}.home .app{display:none}
+.hb{position:absolute;top:20px;left:24px;display:flex;gap:8px;direction:ltr}.b{font:11px monospace;letter-spacing:1px;border:1px solid var(--ln);padding:4px 10px;color:var(--ac);background:#0b0605}
+.logo2{position:absolute;top:16px;left:0;right:0;text-align:center;font:24px Georgia,serif;letter-spacing:11px;color:var(--ac)}
+.clk{position:absolute;top:18px;right:30px;text-align:right}.clk b{font:300 26px sans-serif;display:block;color:#d9c3b3}.clk span{font-size:13px;color:var(--mu)}
+#hr{position:absolute;left:50%;top:292px;width:330px;height:330px;transform:translate(-50%,-50%);display:grid;place-items:center}
+#hr::before{content:"";position:absolute;inset:-34% -70%;border:1px solid #5a3a2850;border-radius:50%;animation:spin 140s linear infinite}
+#hr::after{content:"";position:absolute;inset:-16%;border:1px dashed #5a3a2866;border-radius:50%;animation:spin 90s linear infinite reverse}
+#hr .rp{position:absolute;inset:0;border:2px solid #ffb080;border-radius:50%;opacity:0}body[data-st=alert] #hr .rp{animation:rip 2s ease-out infinite}@keyframes rip{from{opacity:.8;transform:scale(1)}to{opacity:0;transform:scale(2.2)}}
+.home #raven{width:100%;margin:0}.flip svg{transform:scaleX(-1)}@keyframes spin{to{transform:rotate(360deg)}}
+.g{position:absolute;left:0;right:0;top:480px;text-align:center}.g h1{margin:0;font-size:34px}.g p{margin:8px 0 0;font-size:19px;color:#d8c3b3}.nx{margin-top:8px;font-size:14px;color:var(--ac)}
+.bar{position:absolute;left:50%;transform:translateX(-50%);bottom:30px;width:752px;max-width:92vw;height:56px;border:1px solid var(--ln);background:#0e0806;opacity:.6;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:14px;color:var(--mu)}
+.wv{display:flex;gap:3px;align-items:center;direction:ltr}.wv i{width:3px;height:6px;background:#6a4a38;display:block}.mic{width:38px;height:38px;border-radius:50%;background:#4a3224;display:grid;place-items:center}
+#mb{position:absolute;right:24px;bottom:30px;width:38px;height:38px;border:1px solid var(--ac);background:#0b0605;color:var(--ac);font-size:20px;cursor:pointer}
+.menu{position:absolute;right:24px;bottom:78px;width:170px;background:#120a07f2;border:1px solid var(--ln);padding:6px}.menu a{display:flex;justify-content:space-between;padding:9px 12px;cursor:pointer;color:var(--mu)}.menu a.on{color:var(--tx);background:#d98a6022}.menu a:hover{background:#d98a6022}
+#raven svg #ring{transform-box:fill-box;transform-origin:center;animation:spin 60s linear infinite}
+#raven svg #raven{transform-box:fill-box;transform-origin:50% 100%;animation:br 5s ease-in-out infinite}@keyframes br{50%{transform:scale(1.012)}}
+.st-think svg #raven{animation:none}.st-think svg #eyes{filter:brightness(2.4) drop-shadow(0 0 5px #ffd2a0);animation:none}.st-think svg #ring{animation-duration:5s}
+.st-ok svg #wing-near{transform-box:fill-box;transform-origin:100% 100%;animation:flap .8s ease-in-out 1}@keyframes flap{40%{transform:rotate(-14deg)}}.st-ok{animation:flash 1.4s ease-out 1}@keyframes flash{25%{filter:sepia(1) saturate(3) hue-rotate(-38deg) brightness(1.8) drop-shadow(0 0 34px #ffd0a0)}}
+.st-alert svg #wing-near{transform-box:fill-box;transform-origin:100% 100%;animation:trem .16s linear infinite}@keyframes trem{50%{transform:rotate(-3deg)}}.st-alert svg #beak-lower{animation:none}
+.st-off,.st-net{filter:grayscale(1) brightness(.5)!important;animation:none!important}.st-off svg #ring,.st-net svg #ring{opacity:.3;animation:none}.st-off svg #eyes,.st-net svg #eyes{opacity:.25;animation:none}
+.st-sleep svg #eyes{transform:scaleY(.06);animation:none}.st-sleep svg #ring{animation-duration:150s}
+@media(max-width:900px){.app{grid-template-columns:1fr}}
+</style></head><body><div class="app" id="app">
+<aside class="box"><div class="logo">A.N.Z.U</div><div id="sr"><div id="raven"></div></div><p class="cap" id="mood"></p><nav id="nav"></nav></aside>
+<main class="box" id="main"></main>
+<aside class="box" id="side"></aside></div>
+<div id="home"><div class="hb"><span class="b">LOCAL</span><span class="b">V1.0</span><span class="b" id="on">● ONLINE</span></div>
+<div class="logo2">A.N.Z.U</div><div class="clk"><b id="ck"></b><span id="dt"></span></div>
+<div id="hr"><i class="rp"></i></div><div class="g"><h1 id="hg"></h1><p id="hp"></p><div class="nx" id="nx"></div></div>
+<div class="bar"><span>الصوت غير مفعّل بعد</span><div class="wv" id="wv"></div><div class="mic">🎤</div></div>
+<div id="menu" class="menu" hidden></div><button id="mb" onclick="tm()">⊞</button></div>
+<script>
+const T={calm:{d:{g:"أنا هنا. اكتب أو اضغط على أحد الأقسام.",a:"تنبيه الآن"},c:{g:"شنو عندنا اليوم؟",a:"إشعار. لا تتجاهله."}}};
+const MODS=[["home","الرئيسية"],["anzu","أنزو"],["tasks","المهام"],["habits","العادات"],["goals","الأهداف"],["settings","الإعدادات"]];
+const SOON=[];let tab="tasks";
+let S=null,view=(location.hash.slice(1)||"home").split("/")[0],seen=null,alertUntil=0,persona=localStorage.getItem("persona")||"d";
+const $=id=>document.getElementById(id),esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt=iso=>new Date(iso).toLocaleString("ar-IQ",{dateStyle:"medium",timeStyle:"short"});
+fetch("/raven.svg").then(r=>r.text()).then(t=>{$("raven").innerHTML=t;});
+function nav(){$("nav").innerHTML=MODS.map(([k,n])=>`<a class="${k==view?"on":""}" onclick="go('${k}')">${n}</a>`).join("")+SOON.map(n=>`<a class="off">${n}<small>قريبًا</small></a>`).join("");}
+function go(v){view=v;location.hash=v;draw();}
+function ring(p){return `<div class="ring" style="--p:${p}"><i>${p}%</i></div>`}
+function rel(iso){const m=Math.max(1,Math.round((new Date(iso)-Date.now())/6e4));return m<60?`بعد ${m} دقيقة`:m<1440?`بعد ${Math.round(m/60)} ساعة`:`بعد ${Math.round(m/1440)} يوم`}
+let force=null,lastUser=Date.now(),okUntil=0,seenKey=null,offline=false,fired="";
+addEventListener("mousemove",()=>lastUser=Date.now());addEventListener("keydown",()=>lastUser=Date.now());
+function state(){if(force)return force;if(offline)return"off";if(Date.now()<alertUntil)return"alert";const n=S.notify||{};if(n.problem)return"net";if(Date.now()<okUntil)return"ok";if((n.waiting||0)>0)return"think";if(new Date().getHours()<5&&Date.now()-lastUser>12e4)return"sleep";return"idle"}
+function tm(){const m=$("menu");m.hidden=!m.hidden;$("mb").textContent=m.hidden?"⊞":"✕"}
+function clock(){const d=new Date();$("ck").textContent=d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",hour12:true}).replace("AM","ص").replace("PM","م");$("dt").textContent=d.toLocaleDateString("ar-IQ",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
+const PH={d:{i:"أنا هنا. تفضّل، شنو تريد؟",s:"هدوء الليل. أنا هنا إن احتجت."},c:{i:"وصلت. قل، وبلا لفّ.",s:"الليل هادي. نادني إن لزم."}};
+function home(st,rm,tk){const h=new Date().getHours(),nm=localStorage.getItem("name")||"عبود",nx=rm.slice().sort((a,b)=>a.at<b.at?-1:1)[0],P=PH[persona];
+ let g=(h<12?"صباح الخير":"مساء الخير")+"، "+nm,p=P.i,n=nx?`تذكيرك القادم: ${nx.text} — ${rel(nx.at)}`:"";
+ if(st=="alert"){g=fired||"تذكير";p="تذكير الآن";n=""}
+ if(st=="off"){g="انقطع الاتصال بأنزو";p="افتح نافذته المصغّرة في شريط المهام، أو شغّله من جديد.";n=""}
+ if(st=="net"){p="لا إنترنت. تنبيهات الهاتف ستُرسَل حين يعود.";}
+ if(st=="sleep"){p=P.s;n=""}
+ $("hg").textContent=g;$("hp").textContent=p;$("nx").textContent=n;
+ $("menu").innerHTML=MODS.map(([k,t])=>`<a class="${k=="home"?"on":""}" onclick="tm();go('${k}')">${t}</a>`).join("");}
+function draw(){if(!S)return;const slot=view=="home"?$("hr"):$("sr");if($("raven").parentNode!==slot)slot.appendChild($("raven"));nav();document.body.className=view=="home"?"home":"";
+ const tk=S.tasks,gl=S.goals,rm=(S.reminders||[]).filter(r=>r.status=="pending");let m="",s="";
+ const now=Date.now()<alertUntil;const st=state();$("raven").className="st-"+st+(view=="home"?" flip":"");document.body.dataset.st=st;$("on").textContent=st=="off"?"● OFFLINE":st=="net"?"● NO INTERNET":"● ONLINE";
+ $("mood").textContent=st.toUpperCase();
+ if(view=="home"){home(st,rm,tk);return;}
+ if(view=="anzu"){m=`<p class="cap">ANZU // CHAT</p><h1>أنزو</h1><div class="row"><b>المحادثة مع أنزو قريبًا</b><small>تحتاج الذكاء الاصطناعي</small></div>`;}
+ if(view=="habits"){m=`<p class="cap">HABITS</p><h1>العادات</h1><div class="row"><b>العادات قريبًا</b><small>سنصمّمها بعد المهام</small></div>`;}
+ if(view=="tasks"){const tb=`<div class="tabs"><span class="chip ${tab=="tasks"?"on":""}" onclick="tab='tasks';draw()">المهام</span><span class="chip ${tab=="reminders"?"on":""}" onclick="tab='reminders';draw()">التذكيرات (${rm.length})</span></div>`;
+  if(tab=="tasks"){m=`<p class="cap">TASKS // ${tk.length}</p><h1>المهام</h1>${tb}`+(tk.length?tk.map(t=>{const g=gl.find(x=>x.id==t.goalId);return `<div class="row ${t.done?"done":""}"><b>${esc(t.title)}</b><span>${g?`<span class="chip">${esc(g.title)}</span>`:""} ${t.done?"✓":""}</span></div>`}).join(""):"<p>لا مهام بعد.</p>");}
+  else{const all=(S.reminders||[]).slice().sort((a,b)=>a.at<b.at?-1:1);m=`<p class="cap">REMINDERS // ${rm.length}</p><h1>المهام</h1>${tb}`+(all.length?all.map(r=>`<div class="row"><b>${esc(r.text)}</b><span><small>${fmt(r.at)}</small> <span class="chip">${{pending:"منتظر",fired:"ظهر",cancelled:"أُلغي"}[r.status]}</span></span></div>`).join(""):"<p>لا تذكيرات بعد.</p>");}}
+ if(view=="goals"){m=`<p class="cap">GOALS // ${gl.length}</p><h1>الأهداف</h1>`+(gl.length?gl.map(g=>{const k=tk.filter(t=>t.goalId==g.id),d=k.filter(t=>t.done).length;return `<div class="row"><b>${esc(g.title)}</b><span class="chip">${d} من ${k.length}</span></div>`}).join(""):"<p>لا أهداف بعد.</p>");}
+ if(view=="settings"){const n=S.notify||{};m=`<p class="cap">SETTINGS</p><h1>الإعدادات</h1>
+  <div class="row"><b>شخصية أنزو</b><select onchange="persona=this.value;localStorage.setItem('persona',persona);draw()"><option value="d" ${persona=="d"?"selected":""}>الافتراضية</option><option value="c" ${persona=="c"?"selected":""}>أنزو ستايل</option></select></div>
+  <div class="row"><b>إشعارات الهاتف</b><span class="chip">${n.ready?(n.enabled?"مفعّلة":"متوقفة"):"غير مُعدّة"}</span></div>
+  <div class="row"><b>رسائل منتظرة للهاتف</b><span class="chip">${n.waiting??0}</span></div>
+  <p class="cap">الشخصية الآن تغيّر العبارات الثابتة فقط. الشخصية الحقيقية تأتي مع الذكاء الاصطناعي.</p>`;}
+ if(view=="tasks"||view=="goals"){const p=tk.length?Math.round(100*tk.filter(t=>t.done).length/tk.length):0;s=`<p class="cap">PROGRESS</p><h1>الإنجاز</h1>${ring(p)}`;}
+ s+=`<p class="cap">LIVE ACTIVITY</p><h1 style="font-size:20px">شنو يسوي أنزو الآن</h1>`+((S.activity||[]).slice().reverse().map(a=>`<div class="act ${a.ok?"":"bad"}"><b>${esc(a.action)}</b> ${esc(a.detail)}<small>${fmt(a.time)} · ${a.actor=="anzu"?"أنزو":"أنت"}</small></div>`).join("")||"<p>لا نشاط بعد.</p>");
+ $("main").innerHTML=m;$("side").innerHTML=s;}
+async function poll(){try{S=await (await fetch("/api/state")).json();offline=false;const A=S.activity||[],k=A.length?A[A.length-1].time+A[A.length-1].action:"";
+ if(seenKey!==null&&k!==seenKey){const i=A.findIndex(a=>a.time+a.action===seenKey),f=i<0?A:A.slice(i+1),r=f.filter(a=>a.action=="reminder.fire").pop();
+  if(r){alertUntil=Date.now()+10000;fired=r.detail.replace(/^#\d+\s*/,"")}else if(f.some(a=>a.ok&&a.actor=="anzu"))okUntil=Date.now()+1600}
+ seenKey=k;draw();}catch{offline=true;draw()}}
+function hash(){const h=location.hash.slice(1).split("/");view=h[0]||"home";force=h[1]||null;draw()}addEventListener("hashchange",hash);wv.innerHTML="<i></i>".repeat(34);hash();clock();setInterval(clock,1000);poll();setInterval(poll,3000);setInterval(draw,1000);
+</script></body></html>

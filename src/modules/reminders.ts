@@ -225,6 +225,7 @@ export const remindersModule: Module = {
     return [];
   },
   jobs: [reminderJob],
+  snapshot: () => reminders,
   commands: [
     {
       name: "remind",

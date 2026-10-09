@@ -7,6 +7,17 @@ export const GOALS_FILE = "goals.json";
 export const tasks: Task[] = [];
 export const goals: Goal[] = [];
 
+const LEVELS: string[] = ["urgent", "medium", "normal"];
+
+// Old files do not have the newer fields: give them default values.
+function fixTask(t: Task): void {
+  t.goalId = t.goalId ?? null;
+  t.priority = LEVELS.includes(t.priority) ? t.priority : "normal";
+  t.due = typeof t.due === "string" ? t.due : null;
+  t.dueTime = typeof t.dueTime === "string" ? t.dueTime : null;
+  t.subtasks = Array.isArray(t.subtasks) ? t.subtasks : [];
+}
+
 export function loadData(): void {
   const loadedTasks = readJsonArray<Task>(TASKS_FILE);
   const loadedGoals = readJsonArray<Goal>(GOALS_FILE);
@@ -17,7 +28,7 @@ export function loadData(): void {
     process.exit(3);
   }
   for (const task of loadedTasks) {
-    task.goalId = task.goalId ?? null;
+    fixTask(task);
     tasks.push(task);
   }
   for (const goal of loadedGoals) {
@@ -36,7 +47,7 @@ export function saveGoals(): boolean {
 // Replaces what is in memory (used after restoring a backup).
 export function replaceData(newTasks: Task[], newGoals: Goal[]): void {
   for (const task of newTasks) {
-    task.goalId = task.goalId ?? null;
+    fixTask(task);
   }
   tasks.splice(0, tasks.length, ...newTasks);
   goals.splice(0, goals.length, ...newGoals);
