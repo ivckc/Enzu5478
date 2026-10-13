@@ -45,6 +45,30 @@ select,button{background:#0b0605;color:var(--tx);border:1px solid var(--ln);padd
 .st-alert svg #wing-near{transform-box:fill-box;transform-origin:100% 100%;animation:trem .16s linear infinite}@keyframes trem{50%{transform:rotate(-3deg)}}.st-alert svg #beak-lower{animation:none}
 .st-off,.st-net{filter:grayscale(1) brightness(.5)!important;animation:none!important}.st-off svg #ring,.st-net svg #ring{opacity:.3;animation:none}.st-off svg #eyes,.st-net svg #eyes{opacity:.25;animation:none}
 .st-sleep svg #eyes{transform:scaleY(.06);animation:none}.st-sleep svg #ring{animation-duration:150s}
+:root{color-scheme:dark}.tb{cursor:pointer;padding:5px 14px}.tb.on{background:#d98a6033;color:var(--tx)}
+.tr{display:grid;grid-template-columns:auto 1fr auto 120px;gap:12px;align-items:center;border:1px solid var(--ln);padding:11px 14px;margin-bottom:8px;background:#0b0605;cursor:pointer}
+.tr.sel{border-color:var(--ac);box-shadow:0 0 12px #d98a6033}.tr.done .tt b{text-decoration:line-through;color:var(--mu)}.tr.done{opacity:.6}
+.ck{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--ac);display:grid;place-items:center;color:#0b0605;font-size:14px;cursor:pointer}.ck.on{background:var(--ac)}
+.tt b{display:block}.tt small{color:var(--mu)}.pc{border:1px solid;padding:1px 10px;font-size:12px}.p-urgent{color:#e58a7a}.p-medium{color:#dba95c}.p-normal{color:#7f9ab4}
+.du{font-size:13px;color:var(--mu);text-align:left}.du.late{color:#e58a7a}
+.addb{display:flex;gap:8px;margin-top:12px}.addb input{flex:1;min-width:0;background:#0b0605;color:var(--tx);border:1px dashed var(--ln);padding:10px 12px;font:inherit}.addb button{background:#c4693f;border:0;color:#fff;padding:0 20px;cursor:pointer}
+.sr{display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid #2a1a12}.sr i{margin-inline-start:auto;cursor:pointer;color:var(--mu);font-style:normal}.sq{width:15px;height:15px;border:1px solid var(--ac);cursor:pointer}.sq.on{background:var(--ac)}.sr .dn{text-decoration:line-through;color:var(--mu)}
+.ask,.msg{padding:8px 12px;margin-bottom:10px;border:1px solid var(--ln)}.ask{border-color:var(--ac)}.msg.ok{color:var(--ok)}.msg.bad{color:#e58a7a}
+label{display:block;margin:8px 0;color:var(--mu);font-size:13px}label input,label select{display:block;width:100%;margin-top:4px}.btns{display:flex;gap:8px}.btns button{cursor:pointer}.dng{border-color:#8a4a4a;color:#e58a7a}.mu{color:var(--mu)}#side .cap{margin-top:16px}
+.vbar{display:none;position:fixed;bottom:14px;left:50%;transform:translateX(-50%);width:min(540px,60vw);height:46px;border:1px solid var(--ln);background:#0e0806;opacity:.6;align-items:center;justify-content:space-between;padding:0 14px;color:var(--mu);font-size:13px}.v-voice .vbar{display:flex}.v-voice .app{padding-bottom:80px}
+
+.chat{height:400px;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:4px;margin-bottom:10px}.bu,.ba{max-width:78%;padding:10px 14px;border:1px solid var(--ln);font-size:14px}.bu{align-self:flex-start;background:#1a0f0a}.ba{align-self:flex-end;background:#0b0605;border-color:var(--ac)}.bu small,.ba small{display:block;color:var(--mu);font-size:11px;margin-top:4px}
+.cd{border:1px solid var(--ln);padding:8px 12px;margin-bottom:4px}.cd small{color:var(--ac);letter-spacing:2px}.cd b{display:block}.ba div,.bu,.act,.msg,.ask{unicode-bidi:plaintext}.chips2{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
+.hr{display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;border:1px solid var(--ln);padding:10px 14px;margin-bottom:8px;background:#0b0605;cursor:pointer}.hr.sel{border-color:var(--ac)}.hg{display:flex;gap:4px;direction:rtl}.hg.month{gap:2px}.hg.big{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;direction:ltr}
+.hq{width:20px;height:20px;border:1px solid var(--ln);background:#120a07;display:block;cursor:pointer}.hg.month .hq{width:8px;height:14px}.hg.big .hq{width:auto;height:20px;cursor:default}.hq.on{background:var(--ac);border-color:var(--ac)}.hq.td{outline:1px solid var(--tx)}.hq.fut{opacity:.25;cursor:default}.fl{color:var(--ac);font-size:13px;min-width:44px}
+.hq{font-size:10px;color:var(--mu);display:grid;place-items:center}.hq.on{color:#0b0605}.tt b,.tt small,input,.mu{unicode-bidi:plaintext}.hdr{display:none;grid-template-columns:auto 1fr auto auto;gap:12px;padding:0 14px 6px;color:var(--mu);font-size:12px}.hdr span{display:none}.st{display:flex;justify-content:space-around;text-align:center;margin:10px 0}.st b{font-size:22px;display:block}.st small{color:var(--mu)}
+.bar2{height:8px;background:#2a1a12}.bar2 i{display:block;height:100%;background:var(--ac)}
+.opts{display:flex;gap:8px;margin:8px 0}.opt{flex:1;text-align:center;padding:10px;border:1px solid var(--ln);cursor:pointer;background:#0b0605}.opt.on{border-color:var(--ac);color:var(--ac);background:#d98a6018}
+.tgl{width:40px;height:22px;border:1px solid var(--ln);display:inline-block;position:relative;cursor:pointer}.tgl i{position:absolute;top:2px;right:2px;width:16px;height:16px;background:var(--mu)}.tgl.on{border-color:var(--ac)}.tgl.on i{background:var(--ac);right:auto;left:2px}
+.sw i{display:inline-block;width:24px;height:24px;margin-inline-start:8px;cursor:pointer;border:2px solid transparent}.sw i.on{border-color:#fff}.btns.wrap{flex-wrap:wrap;margin:6px 0}.btn2{display:block;border:1px solid var(--ac);padding:8px;text-align:center;color:var(--tx);text-decoration:none;margin:8px 0}
+.rf{border:1px dashed var(--ln);padding:10px;margin-top:12px}.rf input{width:100%;background:#0b0605;color:var(--tx);border:1px solid var(--ln);padding:8px;font:inherit;margin-bottom:6px}.rr{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px}.rr input{width:auto;margin:0}.rr button{cursor:pointer}
+.row button{cursor:pointer}.chip[data-b]{cursor:pointer}
+
 @media(max-width:900px){.app{grid-template-columns:1fr}}
 </style></head><body><div class="app" id="app">
 <aside class="box"><div class="logo">A.N.Z.U</div><div id="sr"><div id="raven"></div></div><p class="cap" id="mood"></p><nav id="nav"></nav></aside>
@@ -52,19 +76,20 @@ select,button{background:#0b0605;color:var(--tx);border:1px solid var(--ln);padd
 <aside class="box" id="side"></aside></div>
 <div id="home"><div class="hb"><span class="b">LOCAL</span><span class="b">V1.0</span><span class="b" id="on">● ONLINE</span></div>
 <div class="logo2">A.N.Z.U</div><div class="clk"><b id="ck"></b><span id="dt"></span></div>
-<div id="hr"><i class="rp"></i></div><div class="g"><h1 id="hg"></h1><p id="hp"></p><div class="nx" id="nx"></div></div>
+<div id="hr"><i class="rp"></i></div><div class="g"><h1 id="hg"></h1><p id="hp"></p><div class="nx" id="nx"></div><div class="chips2" id="hc" style="justify-content:center;margin-top:12px"></div></div>
 <div class="bar"><span>الصوت غير مفعّل بعد</span><div class="wv" id="wv"></div><div class="mic">🎤</div></div>
 <div id="menu" class="menu" hidden></div><button id="mb" onclick="tm()">⊞</button></div>
+<div class="vbar"><span>الصوت غير مفعّل بعد</span><div class="wv" id="wv2"></div><div class="mic">🎤</div></div>
 <script>
 const T={calm:{d:{g:"أنا هنا. اكتب أو اضغط على أحد الأقسام.",a:"تنبيه الآن"},c:{g:"شنو عندنا اليوم؟",a:"إشعار. لا تتجاهله."}}};
 const MODS=[["home","الرئيسية"],["anzu","أنزو"],["tasks","المهام"],["habits","العادات"],["goals","الأهداف"],["settings","الإعدادات"]];
-const SOON=[];let tab="tasks";
+const SOON=[];let flt="all";
 let S=null,view=(location.hash.slice(1)||"home").split("/")[0],seen=null,alertUntil=0,persona=localStorage.getItem("persona")||"d";
 const $=id=>document.getElementById(id),esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmt=iso=>new Date(iso).toLocaleString("ar-IQ",{dateStyle:"medium",timeStyle:"short"});
 fetch("/raven.svg").then(r=>r.text()).then(t=>{$("raven").innerHTML=t;});
 function nav(){$("nav").innerHTML=MODS.map(([k,n])=>`<a class="${k==view?"on":""}" onclick="go('${k}')">${n}</a>`).join("")+SOON.map(n=>`<a class="off">${n}<small>قريبًا</small></a>`).join("");}
-function go(v){view=v;location.hash=v;draw();}
+function go(v){if(document.activeElement)document.activeElement.blur();lastSig="";view=v;location.hash=v;draw();}
 function ring(p){return `<div class="ring" style="--p:${p}"><i>${p}%</i></div>`}
 function rel(iso){const m=Math.max(1,Math.round((new Date(iso)-Date.now())/6e4));return m<60?`بعد ${m} دقيقة`:m<1440?`بعد ${Math.round(m/60)} ساعة`:`بعد ${Math.round(m/1440)} يوم`}
 let force=null,lastUser=Date.now(),okUntil=0,seenKey=null,offline=false,fired="";
@@ -80,17 +105,164 @@ function home(st,rm,tk){const h=new Date().getHours(),nm=localStorage.getItem("n
  if(st=="net"){p="لا إنترنت. تنبيهات الهاتف ستُرسَل حين يعود.";}
  if(st=="sleep"){p=P.s;n=""}
  $("hg").textContent=g;$("hp").textContent=p;$("nx").textContent=n;
- $("menu").innerHTML=MODS.map(([k,t])=>`<a class="${k=="home"?"on":""}" onclick="tm();go('${k}')">${t}</a>`).join("");}
-function draw(){if(!S)return;const slot=view=="home"?$("hr"):$("sr");if($("raven").parentNode!==slot)slot.appendChild($("raven"));nav();document.body.className=view=="home"?"home":"";
+ $("hc").innerHTML=shortcuts.map((x,i)=>`<span class="chip tb" data-b="sc" data-i="${i}">${esc(x.label)}</span>`).join("");$("menu").innerHTML=MODS.map(([k,t])=>`<a class="${k=="home"?"on":""}" onclick="tm();go('${k}')">${t}</a>`).join("");}
+const PO={urgent:0,medium:1,normal:2},PL={urgent:"عاجل",medium:"متوسط",normal:"عادي"};
+let selId=null,msg=null,ask=null,lastSig="",redrawNow=false,drafts={};
+const TOKEN=(document.querySelector('meta[name="anzu-token"]')||{}).content||"";
+const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+function dl(d,t){if(!d)return"";const diff=Math.round((new Date(d+"T00:00")-new Date(ymd(new Date())+"T00:00"))/864e5);
+ const w=diff==0?"اليوم":diff==1?"غدًا":diff==-1?"أمس":diff>1&&diff<7?new Date(d+"T00:00").toLocaleDateString("ar-IQ",{weekday:"long"}):diff>=7&&diff<14?"الأسبوع القادم":d;return w+(t?" "+t:"")}
+const sorted=a=>a.slice().sort((x,y)=>(x.done-y.done)||(PO[x.priority]-PO[y.priority])||((x.due||"9")+(x.dueTime||"99:99")).localeCompare((y.due||"9")+(y.dueTime||"99:99"))||x.id-y.id);
+function filt(tk){const T=ymd(new Date());return flt=="done"?tk.filter(t=>t.done):flt=="today"?tk.filter(t=>!t.done&&t.due==T):flt=="up"?tk.filter(t=>!t.done&&t.due&&t.due>T):tk}
+function redraw(){lastSig="";redrawNow=true;draw();redrawNow=false}
+async function cmd(text,cid){let ok=false;try{const r=await fetch("/api/command",{method:"POST",headers:{"Content-Type":"application/json","X-Anzu-Token":TOKEN},body:JSON.stringify(cid?{confirm:cid}:{text})});const d=await r.json();lastRes=d;d.fail=/did not understand|may not run|Forbidden|Bad command|Too big/.test((d.lines||[]).join(" "));
+ if(d.confirmId){ask={id:d.confirmId,text:d.lines[0]};msg=null;ok=true}else{ask=null;ok=!!d.ok;msg={ok,t:(d.lines||[]).join(" "),until:Date.now()+5000};if(ok&&/^notify (setup|show)/.test(text||""))info=d.lines;
+  const m=/(task|habit|goal) (\d+)/.exec((d.lines||[])[0]||"");if(ok&&text&&m&&/^(add|habit add|goal) /.test(text)){const n=+m[2];if(m[1]=="task")selId=n;else if(m[1]=="habit")selHab=n;else selGoal=n}}}
+ catch{msg={ok:false,t:"تعذّر الاتصال بأنزو",until:Date.now()+5000}}
+ await poll();redraw();return ok}
+function addTask(){const t=(drafts.addin||"").trim();if(!t)return;drafts.addin="";cmd("add "+t).then(ok=>{if(!ok){drafts.addin=t;redraw()}})}
+function subAdd(id){const t=(drafts.subin||"").trim();if(!t||id==null)return;drafts.subin="";cmd(`sub add ${id} ${t}`).then(ok=>{if(!ok){drafts.subin=t;redraw()}})}
+function tasksView(tk,gl,rm){
+ const a=document.activeElement,typing=a&&/INPUT|SELECT/.test(a.tagName)&&($("main").contains(a)||$("side").contains(a));
+ if(msg&&Date.now()>msg.until)msg=null;
+ const T=ymd(new Date()),cnt={all:tk.length,today:tk.filter(t=>!t.done&&t.due==T).length,up:tk.filter(t=>!t.done&&t.due&&t.due>T).length,done:tk.filter(t=>t.done).length};
+ if(!tk.find(t=>t.id==selId))selId=(sorted(tk)[0]||{}).id??null;
+ const sig=JSON.stringify([S.tasks,S.goals,S.reminders,flt,selId,msg,ask,Math.floor(Date.now()/6e4)]);
+ if(!redrawNow&&(typing||sig===lastSig))return;lastSig=sig;
+ const fid=a&&a.id&&typing?a.id:null,list=flt=="reminders"?[]:sorted(filt(tk));
+ const tabs=[["all","الكل",cnt.all],["today","اليوم",cnt.today],["up","القادمة",cnt.up],["done","المكتملة",cnt.done],["reminders","التذكيرات",rm.length]].map(([k,n,c])=>`<span class="chip tb ${flt==k?"on":""}" data-a="flt" data-f="${k}">${n} · ${c}</span>`).join("");
+ const row=t=>{const g=gl.find(x=>x.id==t.goalId),late=!t.done&&t.due&&t.due<T;return `<div class="tr ${t.done?"done":""} ${t.id==selId?"sel":""}" data-a="sel" data-id="${t.id}"><span class="ck ${t.done?"on":""}" data-a="tog" data-id="${t.id}" data-done="${t.done?1:0}">${t.done?"✓":""}</span><div class="tt"><b>${esc(t.title)}</b><small>${g?esc(g.title):""}${t.subtasks.length?` · ${t.subtasks.filter(x=>x.done).length}/${t.subtasks.length}`:""}</small></div><span class="pc p-${t.priority}">${PL[t.priority]}</span><span class="du ${late?"late":""}">${dl(t.due,t.dueTime)}</span></div>`};
+ let m=`<p class="cap">TASKS // ACTIVE</p><h1>المهام</h1><div class="tabs">${tabs}</div>`;
+ if(ask)m+=`<div class="ask">${esc(ask.text.replace(" Type yes to confirm.",""))} <button data-a="yes">نعم</button> <button data-a="no">لا</button></div>`;
+ if(msg)m+=`<div class="msg ${msg.ok?"ok":"bad"}">${esc(msg.t)}</div>`;
+ if(flt=="reminders"){const all=(S.reminders||[]).slice().sort((x,y)=>x.at<y.at?-1:1);m+=all.length?all.map(r=>`<div class="row"><b>${esc(r.text)}</b><span><small>${fmt(r.at)}</small> <span class="chip">${{pending:"منتظر",fired:"ظهر",cancelled:"أُلغي"}[r.status]}</span>${r.status=="pending"?`<button data-b="rcancel" data-id="${r.id}">إلغاء</button>`:""}</span></div>`).join(""):"<p>لا تذكيرات بعد.</p>";m+=remForm()}
+ else m+=list.length?list.map(row).join(""):"<p>لا مهام هنا.</p>";
+ if(flt!="reminders")m+=`<div class="addb"><input id="addin" placeholder="أضف مهمة…" value="${esc(drafts.addin||"")}"><button data-a="add">إضافة</button></div>`;
+ const t=tk.find(x=>x.id==selId);let s;
+ if(!t)s=`<p class="cap">DETAILS</p><p class="mu">اختر مهمة.</p>`;else{const p=t.subtasks.length?Math.round(100*t.subtasks.filter(x=>x.done).length/t.subtasks.length):(t.done?100:0);
+  s=`<p class="cap">DETAILS</p><h1 style="font-size:20px">${esc(t.title)}</h1><p class="mu">${dl(t.due,t.dueTime)||"بلا موعد"} · ${PL[t.priority]}</p>${ring(p)}<p class="cap">SUBTASKS</p>`
+  +t.subtasks.map(x=>`<div class="sr"><span class="sq ${x.done?"on":""}" data-a="subt" data-id="${t.id}" data-n="${x.id}" data-done="${x.done?1:0}"></span><span class="${x.done?"dn":""}">${esc(x.title)}</span><i data-a="subd" data-id="${t.id}" data-n="${x.id}">✕</i></div>`).join("")
+  +`<div class="addb"><input id="subin" placeholder="أضف مهمة فرعية…" value="${esc(drafts.subin||"")}"><button data-a="suba" data-id="${t.id}">+</button></div><p class="cap">EDIT</p>`
+  +`<label>الأولوية<select id="pr" data-id="${t.id}">${["urgent","medium","normal"].map(k=>`<option value="${k}" ${t.priority==k?"selected":""}>${PL[k]}</option>`).join("")}</select></label>`
+  +`<label>الهدف<select id="gs" data-id="${t.id}"><option value="">—</option>${gl.map(g=>`<option value="${g.id}" ${g.id==t.goalId?"selected":""}>${esc(g.title)}</option>`).join("")}</select></label>`
+  +`<label>الموعد<input type="date" id="dd" value="${(drafts.dd??t.due)||""}"><input type="time" id="dt" value="${(drafts.dt??t.dueTime)||""}"></label><div class="btns"><button data-a="dues" data-id="${t.id}">حفظ الموعد</button><button data-a="duec" data-id="${t.id}">مسح</button></div>`
+  +`<label>العنوان<input id="rn" value="${esc((drafts.rn??t.title))}"></label><div class="btns"><button data-a="ren" data-id="${t.id}">حفظ العنوان</button><button class="dng" data-a="del" data-id="${t.id}">حذف المهمة</button></div>`}
+ $("main").innerHTML=m;$("side").innerHTML=s;if(fid&&$(fid))$(fid).focus()}
+document.addEventListener("input",e=>{if(e.target.id)drafts[e.target.id]=e.target.value});
+document.addEventListener("keydown",e=>{if(e.key!="Enter")return;if(e.target.id=="addin")addTask();if(e.target.id=="subin")subAdd(selId)});
+document.addEventListener("change",e=>{const el=e.target;if(el.id=="pr")cmd(`priority ${el.dataset.id} ${el.value}`);if(el.id=="gs"&&el.value)cmd(`link ${el.dataset.id} ${el.value}`)});
+document.addEventListener("click",e=>{const el=e.target.closest("[data-a]");if(!el)return;const a=el.dataset.a,id=el.dataset.id,d=el.dataset;
+ if(a=="sel"){selId=+id;drafts.dd=drafts.dt=drafts.rn=undefined;redraw()}
+ else if(a=="flt"){flt=d.f;redraw()}
+ else if(a=="tog")cmd((d.done=="1"?"reopen ":"done ")+id)
+ else if(a=="add")addTask()
+ else if(a=="suba")subAdd(id)
+ else if(a=="subt")cmd(`sub ${d.done=="1"?"reopen":"done"} ${id} ${d.n}`)
+ else if(a=="subd")cmd(`sub delete ${id} ${d.n}`)
+ else if(a=="dues"){const dd=$("dd").value,dt=$("dt").value;if(!dd){msg={ok:false,t:"اختر التاريخ أولًا",until:Date.now()+4000};redraw()}else cmd(`due ${id} ${dd}${dt?" "+dt:""}`).then(()=>{drafts.dd=drafts.dt=undefined})}
+ else if(a=="duec")cmd(`due ${id} none`).then(()=>{drafts.dd=drafts.dt=undefined})
+ else if(a=="ren"){const v=$("rn").value.trim();if(v)cmd(`rename task ${id} ${v}`).then(()=>{drafts.rn=undefined})}
+ else if(a=="del")cmd(`delete task ${id}`)
+ else if(a=="yes"&&ask)cmd(null,ask.id)
+ else if(a=="no"){ask=null;redraw()}});
+const AC=["#4fb3a0","#7a8fe0","#d2aa4f","#d98a60"],AUT=["سلبي","شريك","استباقي","مستقل"],DN=["س","أ","ن","ث","ر","خ","ج"];
+const LS=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch{return d}},SV=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+let chat=LS("chat",[]),shortcuts=LS("shortcuts",[]),prefs=Object.assign({aut:1,ap:[1,1,1],ac:3},LS("prefs",{})),info=null,lastRes=null,selHab=null,hTab="week",selGoal=null,chatDraft="";
+document.documentElement.style.setProperty("--ac",AC[prefs.ac]);
+const HELP=["add <مهمة> · done <رقم> · reopen <رقم>","priority <رقم> عاجل|متوسط|عادي","due <رقم> today|tomorrow|YYYY-MM-DD [HH:MM]","habit add <عادة> · habit check <رقم>","remind in 30m <نص> · goal <هدف>","list · goals · habits · reminders · log · backup"],PH2={d:"ما فهمت هذا الأمر. اكتب help.",c:"ما وصلتني. اكتب help."};
+const bars=()=>(ask?`<div class="ask">${esc(ask.text.replace(" Type yes to confirm.",""))} <button data-a="yes">نعم</button> <button data-a="no">لا</button></div>`:"")+(msg?`<div class="msg ${msg.ok?"ok":"bad"}">${esc(msg.t)}</div>`:"")+(info?`<div class="ask">${info.map(esc).join("<br>")} <button data-b="infox">إخفاء</button></div>`:"");
+function guard(parts){const a=document.activeElement,typing=a&&/INPUT|SELECT/.test(a.tagName)&&($("main").contains(a)||$("side").contains(a));if(msg&&Date.now()>msg.until)msg=null;
+ const sig=JSON.stringify([view,parts,msg,ask,info,Math.floor(Date.now()/6e4)]);if(!redrawNow&&(typing||sig===lastSig))return null;lastSig=sig;return typing&&a.id?a.id:""}
+const back=f=>{if(f&&$(f))$(f).focus()},act=n=>(S.activity||[]).slice(-n).reverse().map(a=>`<div class="act ${a.ok?"":"bad"}"><b>${esc(a.action)}</b> ${esc(a.detail)}<small>${fmt(a.time)} · ${a.actor=="anzu"?"أنزو":"أنت"}</small></div>`).join("")||"<p class='mu'>لا نشاط بعد.</p>";
+const shift=(d,n)=>{const x=new Date(d+"T00:00");x.setDate(x.getDate()+n);return ymd(x)};
+function hst(h){const set=new Set(h.days),T=ymd(new Date());let c=set.has(T)?T:shift(T,-1),s=0;while(set.has(c)){s++;c=shift(c,-1)}let best=0,run=0,pv="";for(const d of [...set].sort()){run=pv&&shift(pv,1)==d?run+1:1;best=Math.max(best,run);pv=d}
+ const age=Math.round((new Date(T+"T00:00")-new Date(h.created+"T00:00"))/864e5)+1,w=Math.max(1,Math.min(30,age));let n=0;for(let i=0;i<w;i++)if(set.has(shift(T,-i)))n++;return{streak:s,best,rate:Math.round(100*n/w)}}
+function others(view,tk,gl,rm){({anzu:anzuView,habits:habitsView,goals:goalsView,settings:settingsView})[view](tk,gl,rm)}
+function anzuView(tk,gl){const f=guard([S.activity,chat,shortcuts,gl,prefs.aut]);if(f===null)return;
+ const B=chat.map(c=>c.w=="u"?`<div class="bu">${esc(c.t)}<small>${c.time}</small></div>`:`<div class="ba">${c.card?`<div class="cd"><small>${c.card.k}</small><b>${esc(c.card.t)}</b></div>`:(c.lines||[c.t]).map(x=>`<div>${esc(x)}</div>`).join("")}<small>${c.time}</small></div>`).join("")||`<p class="mu">اكتب أمرًا، مثل: add اشتري خبز · list · help</p>`;
+ $("main").innerHTML=`<p class="cap">CHAT // ANZU</p><h1>أنزو</h1>${bars()}<div class="chat" id="chatbox">${B}</div><div class="chips2">${shortcuts.map((s,i)=>`<span class="chip tb" data-b="csc" data-i="${i}">${esc(s.label)}</span>`).join("")}</div><div class="addb"><input id="chin" placeholder="اكتب أمرًا…" value="${esc(chatDraft)}"><button data-b="csend">إرسال</button></div>`;
+ $("side").innerHTML=`<p class="cap">LIVE ACTIVITY</p><h1 style="font-size:20px">شنو يسوي أنزو الآن</h1>${act(6)}<p class="cap">APPROVAL</p>${ask?`<div class="ask">${esc(ask.text.replace(" Type yes to confirm.",""))}<br><button data-a="yes">موافق</button> <button data-a="no">لا</button></div>`:"<p class='mu'>لا شيء ينتظر موافقتك.</p>"}<p class="cap">AUTONOMY</p><p>المستوى: <b>${AUT[prefs.aut]}</b></p><small class="mu">يُطبَّق حين يوجد الذكاء الاصطناعي.</small><p class="cap">CONTEXT</p><div class="chips2">${gl.map(g=>`<span class="chip">${esc(g.title)}</span>`).join("")}</div>`;
+ const cb=$("chatbox");if(cb)cb.scrollTop=cb.scrollHeight;back(f)}
+async function chatSend(text){text=text.trim();if(!text)return;chatDraft="";const tm=new Date().toLocaleTimeString("ar-IQ",{hour:"numeric",minute:"2-digit"});chat.push({w:"u",t:text,time:tm});
+ if(text=="help")chat.push({w:"a",lines:HELP,time:tm});else{const ok=await cmd(text),r=lastRes||{lines:[]};
+  if(r.confirmId)chat.push({w:"a",lines:["أحتاج موافقتك:",...r.lines],time:tm});else if(r.fail)chat.push({w:"a",t:PH2[persona],time:tm});
+  else chat.push({w:"a",lines:r.lines,card:ok&&/^(done|habit check) /.test(text)?{k:text.startsWith("done")?"TASK DONE":"HABIT",t:r.lines[0]}:null,time:tm})}
+ msg=null;chat=chat.slice(-100);SV("chat",chat);redraw()}
+function habitsView(){const f=guard([S.habits,hTab,selHab,drafts.hin]);if(f===null)return;const H=S.habits||[],T=ymd(new Date());if(!H.find(h=>h.id==selHab))selHab=(H[0]||{}).id??null;
+ const d0=new Date();d0.setDate(d0.getDate()-((d0.getDay()+1)%7));const wk=[...Array(7)].map((_,i)=>{const x=new Date(d0);x.setDate(d0.getDate()+i);return ymd(x)}),mo=[...Array(30)].map((_,i)=>shift(T,i-29));
+ const sq=(h,d,i)=>{const on=h.days.includes(d),fu=d>T;return `<span class="hq ${on?"on":""} ${fu?"fut":""} ${d==T?"td":""}" ${fu?"":`data-b="hday" data-id="${h.id}" data-d="${d}" data-on="${on?1:0}"`}>${hTab=="week"?DN[i]:""}</span>`};
+ const tabs=[["week","هذا الأسبوع"],["month","الشهر"],["streaks","السلاسل"]].map(([k,n])=>`<span class="chip tb ${hTab==k?"on":""}" data-b="htab" data-v="${k}">${n}</span>`).join("");
+ const list=(hTab=="streaks"?H.slice().sort((a,b)=>hst(b).streak-hst(a).streak):H).map(h=>{const s=hst(h),dt=h.days.includes(T);return `<div class="hr ${h.id==selHab?"sel":""}" data-b="hsel" data-id="${h.id}"><span class="ck ${dt?"on":""}" data-b="hday" data-id="${h.id}" data-d="${T}" data-on="${dt?1:0}">${dt?"✓":""}</span><div class="tt"><b>${esc(h.title)}</b><small>${esc(h.note)}</small></div>${hTab=="streaks"?"":`<div class="hg ${hTab}">${(hTab=="week"?wk:mo).map((d,i)=>sq(h,d,i)).join("")}</div>`}<span class="fl">🔥 ${s.streak}</span></div>`}).join("")||"<p>لا عادات بعد. أضف أول عادة بالأسفل.</p>";
+ $("main").innerHTML=`<p class="cap">HABITS // TODAY</p><h1>العادات</h1><div class="tabs">${tabs}</div>${bars()}${list}<div class="addb"><input id="hin" placeholder="أضف عادة جديدة…" value="${esc(drafts.hin||"")}"><button data-b="hadd">إضافة</button></div>`;
+ const h=H.find(x=>x.id==selHab);let s="";
+ if(!h)s=`<p class="cap">DETAILS</p><p class="mu">اختر عادة.</p>`;else{const t=hst(h),p=t.best?Math.round(100*t.streak/t.best):0;
+  s=`<p class="cap">DETAILS</p><h1 style="font-size:20px">${esc(h.title)}</h1><p class="mu">${esc(h.note)||"بلا ملاحظة"} · سلسلة ${t.streak} يوم</p>${ring(p)}<p class="mu" style="text-align:center">${t.streak} يوم متتالي</p><div class="st"><div><b>${t.rate}%</b><small>التزام آخر 30 يومًا</small></div><div><b>${t.best}</b><small>أفضل سلسلة</small></div></div><p class="cap">LAST 30 DAYS</p><div class="hg month big">${mo.map(d=>`<span class="hq ${h.days.includes(d)?"on":""}"></span>`).join("")}</div><p class="cap">EDIT</p><label>ملاحظة<input id="hn" value="${esc(drafts.hn??h.note)}"></label><div class="btns"><button data-b="hnote" data-id="${h.id}">حفظ الملاحظة</button></div><label>العنوان<input id="hr2" value="${esc(drafts.hr2??h.title)}"></label><div class="btns"><button data-b="hren" data-id="${h.id}">حفظ العنوان</button><button class="dng" data-b="hdel" data-id="${h.id}">حذف العادة</button></div>`}
+ $("side").innerHTML=s;back(f)}
+function goalsView(tk,gl){const f=guard([S.tasks,S.goals,selGoal,drafts.gin]);if(f===null)return;if(!gl.find(g=>g.id==selGoal))selGoal=(gl[0]||{}).id??null;
+ const pr=g=>{const k=tk.filter(t=>t.goalId==g.id),d=k.filter(t=>t.done).length;return{k,d,p:k.length?Math.round(100*d/k.length):0}};
+ const rows=gl.map(g=>{const x=pr(g);return `<div class="tr ${g.id==selGoal?"sel":""}" data-b="gsel" data-id="${g.id}" style="grid-template-columns:1fr 150px 56px"><div class="tt"><b>${esc(g.title)}</b><small>${x.d} من ${x.k.length} مهام</small></div><div class="bar2"><i style="width:${x.p}%"></i></div><span class="du">${x.p}%</span></div>`}).join("")||"<p>لا أهداف بعد. أضف أول هدف بالأسفل.</p>";
+ $("main").innerHTML=`<p class="cap">GOALS // ${gl.length}</p><h1>الأهداف</h1>${bars()}${rows}<div class="addb"><input id="gin" placeholder="أضف هدفًا جديدًا…" value="${esc(drafts.gin||"")}"><button data-b="gadd">إضافة</button></div>`;
+ const g=gl.find(x=>x.id==selGoal);let s="";
+ if(!g)s=`<p class="cap">DETAILS</p><p class="mu">اختر هدفًا.</p>`;else{const x=pr(g),free=tk.filter(t=>t.goalId!=g.id&&!t.done);
+  s=`<p class="cap">DETAILS</p><h1 style="font-size:20px">${esc(g.title)}</h1><p class="mu">${x.d} من ${x.k.length} مهام منجزة</p>${ring(x.p)}<p class="cap">LINKED TASKS</p>`+(x.k.map(t=>`<div class="sr"><span class="sq ${t.done?"on":""}" data-b="gtog" data-id="${t.id}" data-on="${t.done?1:0}"></span><span class="${t.done?"dn":""}">${esc(t.title)}</span></div>`).join("")||"<p class='mu'>لا مهام مرتبطة.</p>")
+  +`<label>ربط مهمة<select id="gl"><option value="">—</option>${free.map(t=>`<option value="${t.id}">${esc(t.title)}</option>`).join("")}</select></label><div class="btns"><button data-b="glink" data-id="${g.id}">ربط</button></div><p class="cap">EDIT</p><label>العنوان<input id="gn" value="${esc(drafts.gn??g.title)}"></label><div class="btns"><button data-b="gren" data-id="${g.id}">حفظ العنوان</button><button class="dng" data-b="gdel" data-id="${g.id}">حذف الهدف</button></div><small class="mu">حذف الهدف لا يحذف مهامه.</small>`}
+ $("side").innerHTML=s;back(f)}
+function settingsView(tk,gl){const f=guard([S.notify,S.backup,S.autostart,prefs,shortcuts,persona,offline]);if(f===null)return;const n=S.notify||{},bk=S.backup||[],au=S.autostart||{};const nm=localStorage.getItem("name")||"عبود";
+ const opt=(a,i,n2)=>`<span class="opt ${a?"on":""}" data-b="${n2}" data-i="${i}">${AUT[i]}</span>`,tg=(on,i)=>`<span class="tgl ${on?"on":""}" data-b="ap" data-i="${i}"><i></i></span>`;
+ const ap=["يطلب موافقتي قبل إرسال أي رسالة","يطلب موافقتي قبل تعديل المهام المهمة","يطلب موافقتي قبل حذف أي ذاكرة"];
+ $("main").innerHTML=`<p class="cap">SETTINGS</p><h1>الإعدادات</h1>${bars()}
+ <p class="cap">AUTONOMY</p><p>كم تريد أنزو يتصرف من نفسه؟ <small class="mu">(يُحفظ الآن ويُطبَّق حين يوجد الذكاء الاصطناعي. حذف أي شيء يطلب تأكيدك دائمًا.)</small></p><div class="opts">${AUT.map((_,i)=>opt(prefs.aut==i,i,"aut")).join("")}</div>
+ <p class="cap">APPROVALS</p>${ap.map((t,i)=>`<div class="row"><span>${t}</span>${tg(prefs.ap[i],i)}</div>`).join("")}
+ <p class="cap">PHONE</p><div class="row"><span>إشعارات الهاتف: <b>${n.ready?(n.enabled?"مفعّلة":"متوقفة"):"غير مُعدّة"}</b>${n.topic?` · الموضوع ${esc(n.topic)}`:""} · منتظر ${n.waiting??0}${n.problem?` · مشكلة: ${esc(n.problem)}`:""}</span></div><div class="btns wrap"><button data-b="run" data-c="notify setup">${n.ready?"موضوع جديد":"إعداد الهاتف"}</button>${n.ready?`<button data-b="run" data-c="${n.enabled?"notify off":"notify on"}">${n.enabled?"إيقاف":"تشغيل"}</button><button data-b="run" data-c="notify show">إظهار الموضوع</button><button data-b="run" data-c="notify test">إرسال تجربة</button>`:""}</div>
+ <p class="cap">BACKUP</p><div class="btns wrap"><button data-b="run" data-c="backup">نسخة احتياطية الآن</button></div>${bk.map(b=>`<div class="row"><span><span dir="ltr">${esc(b.name)}</span> <small class="mu">${esc(b.info)}</small></span><button data-b="run" data-c="restore ${esc(b.name)}">استرجاع</button></div>`).join("")||"<p class='mu'>لا نسخ بعد.</p>"}<small class="mu">النسخة تشمل المهام والأهداف فقط. للتذكيرات والعادات استعمل «تصدير بياناتي».</small>
+ <p class="cap">AUTOSTART</p><div class="row"><span>التشغيل مع ويندوز: <b>${au.supported?(au.on?"مفعّل":"متوقف"):"غير متاح"}</b></span>${au.supported?`<button data-b="run" data-c="${au.on?"autostart off":"autostart on"}">${au.on?"إيقاف":"تشغيل"}</button>`:""}</div>
+ <p class="cap">SHORTCUTS</p>${shortcuts.map((s,i)=>`<div class="row"><span>${esc(s.label)} <small class="mu">${esc(s.cmd)}</small></span><button data-b="shdel" data-i="${i}">حذف</button></div>`).join("")||"<p class='mu'>لا اختصارات. تظهر في الرئيسية وأنزو.</p>"}<div class="addb"><input id="sl" placeholder="الاسم"><input id="sc" placeholder="الأمر، مثل: list"><button data-b="shadd">إضافة</button></div>
+ <p class="cap">VOICE</p><div class="row"><span>الرد بصوت عالي</span><span class="tgl"><i></i></span></div><div class="row"><span>لغة التعرّف على الصوت</span><span class="chip">قريبًا</span></div>
+ <p class="cap">LOOK</p><div class="row"><span>لون التمييز</span><span class="sw">${AC.map((c,i)=>`<i class="${prefs.ac==i?"on":""}" style="background:${c}" data-b="acc" data-i="${i}"></i>`).join("")}</span></div>`;
+ $("side").innerHTML=`<p class="cap">PROFILE</p><div class="row"><b style="font-size:22px">${esc(nm)}</b></div><label>الاسم الذي ينادي به أنزو<input id="nm" value="${esc(nm)}"></label><label>الشخصية<select id="ps"><option value="d" ${persona=="d"?"selected":""}>الافتراضية</option><option value="c" ${persona=="c"?"selected":""}>أنزو ستايل</option></select></label><div class="row"><span>اللغة</span><span class="chip">العربية</span></div><div class="row"><span>الحساب</span><span class="chip">محلي</span></div>
+ <p class="cap">DATA</p><a class="btn2" href="/api/export" download>تصدير بياناتي (JSON)</a><div class="btns"><button data-b="nclr">مسح المحادثات</button></div><small class="mu">لم أضف «حذف كل البيانات» عمدًا. استرجع نسخة احتياطية بدلًا منه.</small>
+ <p class="cap">ABOUT</p><div class="row"><span>الإصدار</span><b>v1.0</b></div><div class="row"><span>الحالة</span><b>${offline?"منقطع":"متصل"}</b></div>`;back(f)}
+function remForm(){return `<div class="rf"><input id="rt" placeholder="نص التذكير…" value="${esc(drafts.rt||"")}"><div class="rr"><input type="date" id="rd" value="${drafts.rd||""}"><input type="time" id="rtm" value="${drafts.rtm||""}"><button data-b="radd">إضافة تذكير</button></div><div class="rr"><small class="mu">سريع:</small><button data-b="rq" data-w="in 10m">بعد 10 دقائق</button><button data-b="rq" data-w="in 1h">بعد ساعة</button><button data-b="rq" data-w="tomorrow 09:00">غدًا 9:00</button></div></div>`}
+function remAdd(w){const t=(drafts.rt||"").trim();if(!t){msg={ok:false,t:"اكتب نص التذكير أولًا",until:Date.now()+4000};redraw();return}drafts.rt="";cmd(`remind ${w} ${t}`).then(ok=>{if(!ok){drafts.rt=t;redraw()}})}
+document.addEventListener("input",e=>{if(e.target.id=="chin")chatDraft=e.target.value});
+document.addEventListener("keydown",e=>{if(e.key!="Enter")return;const i=e.target.id;if(i=="chin")chatSend(chatDraft);if(i=="hin")document.querySelector('[data-b="hadd"]').click();if(i=="gin")document.querySelector('[data-b="gadd"]').click()});
+document.addEventListener("change",e=>{const el=e.target;if(el.id=="nm"){localStorage.setItem("name",el.value.trim()||"عبود");redraw()}if(el.id=="ps"){persona=el.value;localStorage.setItem("persona",persona);redraw()}});
+document.addEventListener("click",e=>{const el=e.target.closest("[data-b]");if(!el)return;const b=el.dataset.b,id=el.dataset.id,d=el.dataset,T=ymd(new Date());
+ if(b=="hsel"){selHab=+id;drafts.hn=drafts.hr2=undefined;redraw()}else if(b=="htab"){hTab=d.v;redraw()}
+ else if(b=="hday")cmd(`habit ${d.on=="1"?"uncheck":"check"} ${id} ${d.d}`)
+ else if(b=="hadd"){const t=(drafts.hin||"").trim();if(t){drafts.hin="";cmd("habit add "+t)}}
+ else if(b=="hnote")cmd(`habit note ${id} ${$("hn").value.trim()}`).then(()=>{drafts.hn=undefined})
+ else if(b=="hren"){const v=$("hr2").value.trim();if(v)cmd(`habit rename ${id} ${v}`).then(()=>{drafts.hr2=undefined})}
+ else if(b=="hdel")cmd(`habit delete ${id}`)
+ else if(b=="gsel"){selGoal=+id;drafts.gn=undefined;redraw()}
+ else if(b=="gadd"){const t=(drafts.gin||"").trim();if(t){drafts.gin="";cmd("goal "+t)}}
+ else if(b=="gren"){const v=$("gn").value.trim();if(v)cmd(`rename goal ${id} ${v}`).then(()=>{drafts.gn=undefined})}
+ else if(b=="gdel")cmd(`delete goal ${id}`)
+ else if(b=="gtog")cmd(`${d.on=="1"?"reopen":"done"} ${id}`)
+ else if(b=="glink"){const t=$("gl").value;if(t)cmd(`link ${t} ${id}`)}
+ else if(b=="csend")chatSend(chatDraft)
+ else if(b=="csc"){const s=shortcuts[+d.i];if(s){view="anzu";location.hash="anzu";chatSend(s.cmd)}}
+ else if(b=="sc"){const s=shortcuts[+d.i];if(s){go("anzu");chatSend(s.cmd)}}
+ else if(b=="run")cmd(d.c)
+ else if(b=="infox"){info=null;redraw()}
+ else if(b=="aut"){prefs.aut=+d.i;SV("prefs",prefs);redraw()}
+ else if(b=="ap"){prefs.ap[+d.i]=prefs.ap[+d.i]?0:1;SV("prefs",prefs);redraw()}
+ else if(b=="acc"){prefs.ac=+d.i;SV("prefs",prefs);document.documentElement.style.setProperty("--ac",AC[prefs.ac]);redraw()}
+ else if(b=="shadd"){const l=$("sl").value.trim(),c=$("sc").value.trim();if(l&&c){shortcuts.push({label:l,cmd:c});SV("shortcuts",shortcuts);redraw()}}
+ else if(b=="shdel"){shortcuts.splice(+d.i,1);SV("shortcuts",shortcuts);redraw()}
+ else if(b=="nclr"){chat=[];SV("chat",chat);msg={ok:true,t:"تم مسح المحادثات",until:Date.now()+4000};redraw()}
+ else if(b=="radd"){const rd=$("rd").value,rt=$("rtm").value;if(rd&&rt)remAdd(`${rd} ${rt}`);else if(rt)remAdd(`at ${rt}`);else{msg={ok:false,t:"اختر الساعة (والتاريخ إن أردت)",until:Date.now()+4000};redraw()}}
+ else if(b=="rq")remAdd(d.w)
+ else if(b=="rcancel")cmd(`unremind ${id}`)});
+function draw(){if(!S)return;const slot=view=="home"?$("hr"):$("sr");if($("raven").parentNode!==slot)slot.appendChild($("raven"));nav();document.body.className=view=="home"?"home":(["tasks","habits","anzu"].includes(view)?"v-voice":"");
  const tk=S.tasks,gl=S.goals,rm=(S.reminders||[]).filter(r=>r.status=="pending");let m="",s="";
- const now=Date.now()<alertUntil;const st=state();$("raven").className="st-"+st+(view=="home"?" flip":"");document.body.dataset.st=st;$("on").textContent=st=="off"?"● OFFLINE":st=="net"?"● NO INTERNET":"● ONLINE";
+ const now=Date.now()<alertUntil;const st=state();$("raven").className="st-"+st+" flip";document.body.dataset.st=st;$("on").textContent=st=="off"?"● OFFLINE":st=="net"?"● NO INTERNET":"● ONLINE";
  $("mood").textContent=st.toUpperCase();
  if(view=="home"){home(st,rm,tk);return;}
  if(view=="anzu"){m=`<p class="cap">ANZU // CHAT</p><h1>أنزو</h1><div class="row"><b>المحادثة مع أنزو قريبًا</b><small>تحتاج الذكاء الاصطناعي</small></div>`;}
  if(view=="habits"){m=`<p class="cap">HABITS</p><h1>العادات</h1><div class="row"><b>العادات قريبًا</b><small>سنصمّمها بعد المهام</small></div>`;}
- if(view=="tasks"){const tb=`<div class="tabs"><span class="chip ${tab=="tasks"?"on":""}" onclick="tab='tasks';draw()">المهام</span><span class="chip ${tab=="reminders"?"on":""}" onclick="tab='reminders';draw()">التذكيرات (${rm.length})</span></div>`;
-  if(tab=="tasks"){m=`<p class="cap">TASKS // ${tk.length}</p><h1>المهام</h1>${tb}`+(tk.length?tk.map(t=>{const g=gl.find(x=>x.id==t.goalId);return `<div class="row ${t.done?"done":""}"><b>${esc(t.title)}</b><span>${g?`<span class="chip">${esc(g.title)}</span>`:""} ${t.done?"✓":""}</span></div>`}).join(""):"<p>لا مهام بعد.</p>");}
-  else{const all=(S.reminders||[]).slice().sort((a,b)=>a.at<b.at?-1:1);m=`<p class="cap">REMINDERS // ${rm.length}</p><h1>المهام</h1>${tb}`+(all.length?all.map(r=>`<div class="row"><b>${esc(r.text)}</b><span><small>${fmt(r.at)}</small> <span class="chip">${{pending:"منتظر",fired:"ظهر",cancelled:"أُلغي"}[r.status]}</span></span></div>`).join(""):"<p>لا تذكيرات بعد.</p>");}}
+ if(view=="tasks"){tasksView(tk,gl,rm);return;}
+ if(["anzu","habits","goals","settings"].includes(view)){others(view,tk,gl,rm);return;}
  if(view=="goals"){m=`<p class="cap">GOALS // ${gl.length}</p><h1>الأهداف</h1>`+(gl.length?gl.map(g=>{const k=tk.filter(t=>t.goalId==g.id),d=k.filter(t=>t.done).length;return `<div class="row"><b>${esc(g.title)}</b><span class="chip">${d} من ${k.length}</span></div>`}).join(""):"<p>لا أهداف بعد.</p>");}
  if(view=="settings"){const n=S.notify||{};m=`<p class="cap">SETTINGS</p><h1>الإعدادات</h1>
   <div class="row"><b>شخصية أنزو</b><select onchange="persona=this.value;localStorage.setItem('persona',persona);draw()"><option value="d" ${persona=="d"?"selected":""}>الافتراضية</option><option value="c" ${persona=="c"?"selected":""}>أنزو ستايل</option></select></div>
@@ -104,5 +276,5 @@ async function poll(){try{S=await (await fetch("/api/state")).json();offline=fal
  if(seenKey!==null&&k!==seenKey){const i=A.findIndex(a=>a.time+a.action===seenKey),f=i<0?A:A.slice(i+1),r=f.filter(a=>a.action=="reminder.fire").pop();
   if(r){alertUntil=Date.now()+10000;fired=r.detail.replace(/^#\d+\s*/,"")}else if(f.some(a=>a.ok&&a.actor=="anzu"))okUntil=Date.now()+1600}
  seenKey=k;draw();}catch{offline=true;draw()}}
-function hash(){const h=location.hash.slice(1).split("/");view=h[0]||"home";force=h[1]||null;draw()}addEventListener("hashchange",hash);wv.innerHTML="<i></i>".repeat(34);hash();clock();setInterval(clock,1000);poll();setInterval(poll,3000);setInterval(draw,1000);
+function hash(){if(document.activeElement)document.activeElement.blur();lastSig="";const h=location.hash.slice(1).split("/");view=h[0]||"home";force=h[1]||null;draw()}addEventListener("hashchange",hash);wv.innerHTML="<i></i>".repeat(34);$("wv2").innerHTML="<i></i>".repeat(30);hash();clock();setInterval(clock,1000);poll();setInterval(poll,3000);setInterval(draw,1000);
 </script></body></html>

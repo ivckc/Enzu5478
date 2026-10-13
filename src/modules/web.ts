@@ -19,6 +19,12 @@ const ALLOWED = [
   "add", "done", "reopen", "link", "rename task", "delete task", "priority", "due",
   "sub add", "sub done", "sub reopen", "sub delete",
   "goal", "rename goal", "delete goal", "remind", "unremind",
+  "habit add", "habit check", "habit uncheck", "habit rename", "habit note", "habit delete",
+  // Everything below is also needed so the page can replace the terminal.
+  "backup", "restore", "notify setup", "notify show", "notify test", "notify on", "notify off",
+  "autostart on", "autostart off",
+  // Read-only
+  "list", "goals", "reminders", "habits", "backups", "log", "notify", "autostart",
 ];
 
 // A secret made fresh at every start. Only this page receives it, inside its own HTML.
@@ -122,6 +128,17 @@ function handle(req: http.IncomingMessage, res: http.ServerResponse): void {
       ...getSnapshots(),
       activity: log === null ? [] : log.entries.slice(-12),
     });
+  }
+  if (url === "/api/export") {
+    const snap = getSnapshots();
+    const day = new Date().toISOString().slice(0, 10);
+    res.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Disposition": `attachment; filename="anzu-export-${day}.json"`,
+      "Cache-Control": "no-store",
+    });
+    res.end(JSON.stringify({ exportedAt: new Date().toISOString(), tasks, goals, reminders: snap.reminders ?? [], habits: snap.habits ?? [] }, null, 2));
+    return;
   }
   const file = FILES[url];
   if (file === undefined) {

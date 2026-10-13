@@ -119,6 +119,10 @@ function turnOn(folder: string, launcher: string): Result {
 
 export const autostartModule: Module = {
   name: "autostart",
+  snapshot: () => {
+    const launcher = launcherPath();
+    return { supported: launcher !== null, on: launcher !== null && fs.existsSync(launcher) };
+  },
   commands: [
     {
       name: "autostart",

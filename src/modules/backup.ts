@@ -145,6 +145,7 @@ function doRestore(name: string, newTasks: Task[], newGoals: Goal[]): Result {
 
 export const backupModule: Module = {
   name: "backup",
+  snapshot: () => listBackups().map((name) => ({ name, info: describeBackup(name) })),
   commands: [
     {
       name: "backup",
