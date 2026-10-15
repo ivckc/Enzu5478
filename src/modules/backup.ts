@@ -1,11 +1,20 @@
 import * as fs from "node:fs";
 import type { Goal, Module, Result, Task } from "../core/types";
 import { GOALS_FILE, TASKS_FILE, goals, replaceData, tasks } from "../core/data";
-import { readJsonArray, saveJsonArray } from "../core/storage";
+import { readJsonArray, readJsonObject, saveJsonArray, saveJsonObject } from "../core/storage";
 import { toId } from "../core/parse";
 import { problem, say } from "../core/result";
 
 const BACKUP_DIR = "backups";
+
+// All data files to back up
+const DATA_FILES = [
+  "tasks.json",
+  "goals.json",
+  "reminders.json",
+  "habits.json",
+  "notify.json",
+];
 
 function timestamp(): string {
   const d = new Date();
@@ -35,17 +44,38 @@ function removeFolder(dir: string): void {
   }
 }
 
-// Saves the given data as a new backup folder.
+// Saves all data files as a new backup folder.
 // Returns the folder name, or null if it failed (the half-made folder is removed).
-function writeBackup(prefix: string, taskList: Task[], goalList: Goal[]): string | null {
+function writeBackup(prefix: string): string | null {
   const name = uniqueName(prefix + timestamp());
   const dir = `${BACKUP_DIR}/${name}`;
   try {
     fs.mkdirSync(dir, { recursive: true });
-    const ok =
-      saveJsonArray(`${dir}/tasks.json`, taskList) &&
-      saveJsonArray(`${dir}/goals.json`, goalList);
-    if (ok) {
+    let allOk = true;
+    for (const file of DATA_FILES) {
+      if (fs.existsSync(file)) {
+        // Try reading as array first
+        const arrayData = readJsonArray<unknown>(file);
+        if (arrayData !== null) {
+          if (!saveJsonArray(`${dir}/${file}`, arrayData)) {
+            allOk = false;
+            break;
+          }
+        } else {
+          // Try as object
+          const objData = readJsonObject(file);
+          if (objData === null || objData === undefined) {
+            allOk = false;
+            break;
+          }
+          if (!saveJsonObject(`${dir}/${file}`, objData)) {
+            allOk = false;
+            break;
+          }
+        }
+      }
+    }
+    if (allOk) {
       return name;
     }
   } catch {
@@ -70,28 +100,74 @@ function listBackups(): string[] {
     return [];
   }
   return names
-    .filter(
-      (n) =>
+    .filter((n) => {
+      // A valid backup must have at least tasks.json and goals.json
+      return (
         fs.existsSync(`${BACKUP_DIR}/${n}/tasks.json`) &&
         fs.existsSync(`${BACKUP_DIR}/${n}/goals.json`)
-    )
+      );
+    })
     .sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
 }
 
 function describeBackup(name: string): string {
-  const t = readJsonArray<Task>(`${BACKUP_DIR}/${name}/tasks.json`);
-  const g = readJsonArray<Goal>(`${BACKUP_DIR}/${name}/goals.json`);
+  const dir = `${BACKUP_DIR}/${name}`;
+  const counts: string[] = [];
+
+  const t = readJsonArray<Task>(`${dir}/tasks.json`);
+  const g = readJsonArray<Goal>(`${dir}/goals.json`);
+
   if (t === null || g === null) {
     return "damaged";
   }
-  return `${t.length} task(s), ${g.length} goal(s)`;
+
+  counts.push(`${t.length} task(s)`);
+  counts.push(`${g.length} goal(s)`);
+
+  // Check for other data files
+  const r = readJsonArray<unknown>(`${dir}/reminders.json`);
+  if (r !== null && r.length > 0) {
+    counts.push(`${r.length} reminder(s)`);
+  }
+
+  const h = readJsonArray<unknown>(`${dir}/habits.json`);
+  if (h !== null && h.length > 0) {
+    counts.push(`${h.length} habit(s)`);
+  }
+
+  return counts.join(", ");
 }
 
-function doRestore(name: string, newTasks: Task[], newGoals: Goal[]): Result {
+function doRestore(name: string): Result {
+  const dir = `${BACKUP_DIR}/${name}`;
+
+  // Read all files from the backup
+  const backupArrays: Map<string, unknown[]> = new Map();
+  const backupObjects: Map<string, Record<string, unknown>> = new Map();
+
+  for (const file of DATA_FILES) {
+    const arrayData = readJsonArray<unknown>(`${dir}/${file}`);
+    if (arrayData !== null) {
+      backupArrays.set(file, arrayData);
+    } else {
+      const objData = readJsonObject(`${dir}/${file}`);
+      if (objData !== null && objData !== undefined) {
+        backupObjects.set(file, objData);
+      }
+    }
+  }
+
+  // Must have at least tasks and goals
+  if (!backupArrays.has("tasks.json") || !backupArrays.has("goals.json")) {
+    return {
+      ok: false,
+      lines: ["This backup is damaged. Nothing was restored."],
+      logs: [{ action: "backup.restore", detail: `${name}; damaged`, ok: false }],
+    };
+  }
+
   // 1. Save a copy of the current data first.
-  const oldTasks = tasks.map((t) => ({ ...t }));
-  const oldGoals = goals.map((g) => ({ ...g }));
-  const safety = writeBackup("before-restore_", oldTasks, oldGoals);
+  const safety = writeBackup("before-restore_");
   if (safety === null) {
     return {
       ok: false,
@@ -102,11 +178,64 @@ function doRestore(name: string, newTasks: Task[], newGoals: Goal[]): Result {
       logs: [{ action: "backup.restore", detail: `${name}; no safety copy`, ok: false }],
     };
   }
+
   // 2. Write the backup over the live files.
-  const ok = saveJsonArray(TASKS_FILE, newTasks) && saveJsonArray(GOALS_FILE, newGoals);
-  if (!ok) {
-    const back = saveJsonArray(TASKS_FILE, oldTasks) && saveJsonArray(GOALS_FILE, oldGoals);
-    if (back) {
+  const oldArrays: Map<string, unknown[]> = new Map();
+  const oldObjects: Map<string, Record<string, unknown>> = new Map();
+  let allOk = true;
+
+  // Save current data in case we need to rollback
+  for (const file of DATA_FILES) {
+    if (fs.existsSync(file)) {
+      const arrayData = readJsonArray<unknown>(file);
+      if (arrayData !== null) {
+        oldArrays.set(file, arrayData);
+      } else {
+        const objData = readJsonObject(file);
+        if (objData !== null && objData !== undefined) {
+          oldObjects.set(file, objData);
+        }
+      }
+    }
+  }
+
+  // Write backup files (arrays)
+  for (const [file, data] of backupArrays) {
+    if (!saveJsonArray(file, data)) {
+      allOk = false;
+      break;
+    }
+  }
+
+  // Write backup files (objects)
+  if (allOk) {
+    for (const [file, data] of backupObjects) {
+      if (!saveJsonObject(file, data)) {
+        allOk = false;
+        break;
+      }
+    }
+  }
+
+  if (!allOk) {
+    // Try to rollback
+    let rollbackOk = true;
+    for (const [file, data] of oldArrays) {
+      if (!saveJsonArray(file, data)) {
+        rollbackOk = false;
+        break;
+      }
+    }
+    if (rollbackOk) {
+      for (const [file, data] of oldObjects) {
+        if (!saveJsonObject(file, data)) {
+          rollbackOk = false;
+          break;
+        }
+      }
+    }
+
+    if (rollbackOk) {
       return {
         ok: false,
         lines: ["Could not restore. I put your previous data back."],
@@ -118,7 +247,7 @@ function doRestore(name: string, newTasks: Task[], newGoals: Goal[]): Result {
       lines: [
         "Could not restore, and could not put your previous data back.",
         `Your previous data is safe in ${BACKUP_DIR}/${safety}.`,
-        "Copy its two files over tasks.json and goals.json.",
+        `Copy its files over your data files.`,
       ],
       logs: [
         {
@@ -129,13 +258,18 @@ function doRestore(name: string, newTasks: Task[], newGoals: Goal[]): Result {
       ],
     };
   }
-  // 3. Update memory.
+
+  // 3. Update memory for tasks and goals.
+  const newTasks = backupArrays.get("tasks.json") as Task[];
+  const newGoals = backupArrays.get("goals.json") as Goal[];
   replaceData(newTasks, newGoals);
+
   return {
     ok: true,
     lines: [
       `Restored backup ${name}.`,
       `A copy of your previous data is in ${BACKUP_DIR}/${safety}.`,
+      "Restart Anzu for other modules (reminders, habits) to reload.",
     ],
     logs: [
       { action: "backup.restore", detail: `${name}; previous data saved as ${safety}`, ok: true },
@@ -152,7 +286,7 @@ export const backupModule: Module = {
       usage: "backup",
       about: "save a copy of your data",
       run: () => {
-        const name = writeBackup("", tasks, goals);
+        const name = writeBackup("");
         if (name === null) {
           return {
             ok: false,
@@ -160,10 +294,27 @@ export const backupModule: Module = {
             logs: [{ action: "backup.create", detail: "could not save", ok: false }],
           };
         }
+
+        // Count what was backed up
+        const counts: string[] = [];
+        counts.push(`${tasks.length} task(s)`);
+        counts.push(`${goals.length} goal(s)`);
+
+        const remindersData = readJsonArray<unknown>("reminders.json");
+        if (remindersData && remindersData.length > 0) {
+          counts.push(`${remindersData.length} reminder(s)`);
+        }
+
+        const habitsData = readJsonArray<unknown>("habits.json");
+        if (habitsData && habitsData.length > 0) {
+          counts.push(`${habitsData.length} habit(s)`);
+        }
+
         return {
           ok: true,
           lines: [
-            `Backup saved: ${BACKUP_DIR}/${name} (${tasks.length} task(s), ${goals.length} goal(s))`,
+            `Backup saved: ${BACKUP_DIR}/${name}`,
+            `Contains: ${counts.join(", ")}`,
           ],
           logs: [{ action: "backup.create", detail: name, ok: true }],
         };
@@ -200,20 +351,18 @@ export const backupModule: Module = {
         if (name === undefined) {
           return problem(`There is no backup "${rest}". Type backups to see them.`);
         }
-        const dir = `${BACKUP_DIR}/${name}`;
-        const t = readJsonArray<Task>(`${dir}/tasks.json`);
-        const g = readJsonArray<Goal>(`${dir}/goals.json`);
-        if (t === null || g === null) {
+        const description = describeBackup(name);
+        if (description === "damaged") {
           return problem("This backup is damaged. Nothing was restored.");
         }
         return {
           ok: true,
           lines: [
-            `Restore backup ${name} (${t.length} task(s), ${g.length} goal(s))?`,
+            `Restore backup ${name} (${description})?`,
             "Your current data will be replaced. I will save a copy of it first.",
             "Type yes to confirm.",
           ],
-          confirm: () => doRestore(name, t, g),
+          confirm: () => doRestore(name),
         };
       },
     },
