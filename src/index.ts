@@ -12,6 +12,7 @@ import { habitsModule } from "./modules/habits";
 import { webModule } from "./modules/web";
 import { activityModule } from "./modules/activity";
 import { helloModule } from "./modules/hello";
+import { agentModule } from "./agent/module";
 
 // Only one Anzu at a time. Exit code 2 = another one is already running.
 const lock = acquireInstance();
@@ -37,6 +38,7 @@ startApp(
     habitsModule,
     webModule,
     helloModule,
+    agentModule,
   ],
   () => {
     return `Anzu is ready. I have ${tasks.length} task(s) and ${goals.length} goal(s). Type help.`;

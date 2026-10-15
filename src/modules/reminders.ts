@@ -208,6 +208,9 @@ const reminderJob: Job = {
   run: checkReminders,
 };
 
+// Exports for tool adapters
+export { reminders, now, saveReminders };
+
 export const remindersModule: Module = {
   name: "reminders",
   init: () => {

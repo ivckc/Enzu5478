@@ -239,3 +239,6 @@ export const habitsModule: Module = {
     },
   ],
 };
+
+// Exports for tool adapters
+export { habits, save };
