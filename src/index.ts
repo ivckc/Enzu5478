@@ -1,3 +1,14 @@
+// Load .env automatically before any module reads process.env.
+// Resolve relative to project root so it works from any folder.
+// Never expose variable values; silently skip if file missing.
+try {
+  const path = require("node:path");
+  const root = path.resolve(__dirname, "..");
+  process.loadEnvFile(path.join(root, ".env"));
+} catch {
+  // .env missing — fine; agent will show clear Arabic message for missing vars.
+}
+
 import { acquireInstance } from "./core/instance";
 import { goals, loadData, tasks } from "./core/data";
 import { startApp } from "./core/app";

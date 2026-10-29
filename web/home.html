@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>ANZU — Voice Assistant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d0806;
+      --card-bg: #1a0e09;
+      --border: #7a4a33;
+      --copper-light-1: #f4a67f;
+      --copper-light-2: #e8a07a;
+      --copper-med: #c9805c;
+      --dim-text: #b58a74;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--copper-light-1);
+      font-family: 'Cairo', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Background stars effect */
+    .stars {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(white 1px, transparent 0);
+      background-size: 50px 50px;
+      opacity: 0.08;
+      pointer-events: none;
+      animation: drift 120s linear infinite;
+    }
+    @keyframes drift {
+      from { background-position: 0 0; }
+      to { background-position: 1000px 1000px; }
+    }
+
+    /* Header */
+    header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+      max-width: 1200px;
+    }
+    .badges {
+      display: flex;
+      gap: 8px;
+    }
+    .badge {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--dim-text);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .badge.online {
+      color: #7ef4a6;
+      border-color: #3b7a4a;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: var(--copper-light-1);
+      text-shadow: 0 0 10px rgba(244, 166, 127, 0.3);
+    }
+    .state-indicator {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--copper-light-2);
+      padding: 4px 14px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* Main Stage */
+    .stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      position: relative;
+    }
+
+    /* Raven Container */
+    .raven-container {
+      position: absolute;
+      width: 420px;
+      height: 420px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Breathing & Glow in Idle */
+    .raven-outer {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: breathe 4s ease-in-out infinite;
+      filter: drop-shadow(0 0 20px rgba(201, 128, 92, 0.25));
+    }
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(201, 128, 92, 0.2)); }
+      50% { transform: scale(1.03); filter: drop-shadow(0 0 25px rgba(244, 166, 127, 0.4)); }
+    }
+
+    /* Inner wrapper for horizontal flip (scaleX(-1)) to face left without breaking animations */
+    .raven-inner {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: scaleX(-1);
+      transform-origin: center center;
+    }
+
+    .raven-inner svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Reply State Position (Top-Right Corner) */
+    body.state-reply .raven-container {
+      transform: translate(340px, -240px) scale(0.35);
+    }
+    body.state-reply .raven-outer {
+      animation: none;
+      filter: drop-shadow(0 0 10px rgba(201, 128, 92, 0.4));
+    }
+
+    /* Reply badge / text beside raven */
+    .reply-badge {
+      position: absolute;
+      top: 24px;
+      right: 120px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--copper-light-1);
+      padding: 6px 16px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      opacity: 0;
+      transform: translateX(20px);
+      transition: all 0.4s ease 0.2s;
+      pointer-events: none;
+    }
+    body.state-reply .reply-badge {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+
+    /* Footer / State hint */
+    footer {
+      text-align: center;
+      color: var(--dim-text);
+      font-size: 13px;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="badges">
+      <div class="badge" id="badge-security">LOCAL</div>
+      <div class="badge">V1.0</div>
+      <div class="badge" id="badge-online">CHECKING...</div>
+    </div>
+    <div class="logo">A.N.Z.U</div>
+    <div class="state-indicator" id="state-label">IDLE</div>
+  </header>
+
+  <div class="stage">
+    <div class="reply-badge" id="reply-badge">فهمتُ</div>
+    <div class="raven-container" id="raven-box" title="انقر للتبديل بين الوضع الطبيعي ووضع الرد">
+      <div class="raven-outer">
+        <div class="raven-inner">
+           <img src="/raven.svg" id="raven-svg" alt="" style="pointer-events: none; width: 100%; height: 100%; object-fit: contain;">" type="image/svg+xml" id="raven-svg" style="pointer-events: none; width: 100%; height: 100%;"></object>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    اضغط على الغراب للانتقال بين وضع الاستعداد ووضع الرد (Step 1)
+  </footer>
+
+  <script>
+    const ravenBox = document.getElementById('raven-box');
+    const stateLabel = document.getElementById('state-label');
+    const badgeOnline = document.getElementById('badge-online');
+    let currentState = 'IDLE';
+
+    // Toggle state on click
+    ravenBox.addEventListener('click', () => {
+      if (currentState === 'IDLE') {
+        currentState = 'REPLY';
+        document.body.classList.add('state-reply');
+        stateLabel.textContent = 'REPLY';
+      } else {
+        currentState = 'IDLE';
+        document.body.classList.remove('state-reply');
+        stateLabel.textContent = 'IDLE';
+      }
+    });
+
+    // Check online status of backend server
+    async function checkServer() {
+      try {
+        const res = await fetch('/api/state', { headers: { 'X-Anzu-Token': '__TOKEN__' } });
+        if (res.ok) {
+          badgeOnline.textContent = 'ONLINE';
+          badgeOnline.classList.add('online');
+        } else {
+          badgeOnline.textContent = 'OFFLINE';
+        }
+      } catch {
+        badgeOnline.textContent = 'OFFLINE';
+      }
+    }
+    checkServer();
+    setInterval(checkServer, 10000);
+  </script>
+</body>
+</html>

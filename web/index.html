@@ -92,9 +92,10 @@ function nav(){$("nav").innerHTML=MODS.map(([k,n])=>`<a class="${k==view?"on":""
 function go(v){if(document.activeElement)document.activeElement.blur();lastSig="";view=v;location.hash=v;draw();}
 function ring(p){return `<div class="ring" style="--p:${p}"><i>${p}%</i></div>`}
 function rel(iso){const m=Math.max(1,Math.round((new Date(iso)-Date.now())/6e4));return m<60?`بعد ${m} دقيقة`:m<1440?`بعد ${Math.round(m/60)} ساعة`:`بعد ${Math.round(m/1440)} يوم`}
+let agentThink=false;
 let force=null,lastUser=Date.now(),okUntil=0,seenKey=null,offline=false,fired="";
 addEventListener("mousemove",()=>lastUser=Date.now());addEventListener("keydown",()=>lastUser=Date.now());
-function state(){if(force)return force;if(offline)return"off";if(Date.now()<alertUntil)return"alert";const n=S.notify||{};if(n.problem)return"net";if(Date.now()<okUntil)return"ok";if((n.waiting||0)>0)return"think";if(new Date().getHours()<5&&Date.now()-lastUser>12e4)return"sleep";return"idle"}
+function state(){if(agentThink)return"think";if(force)return force;if(offline)return"off";if(Date.now()<alertUntil)return"alert";const n=S.notify||{};if(n.problem)return"net";if(Date.now()<okUntil)return"ok";if((n.waiting||0)>0)return"think";if(new Date().getHours()<5&&Date.now()-lastUser>12e4)return"sleep";return"idle"}
 function tm(){const m=$("menu");m.hidden=!m.hidden;$("mb").textContent=m.hidden?"⊞":"✕"}
 function clock(){const d=new Date();$("ck").textContent=d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",hour12:true}).replace("AM","ص").replace("PM","م");$("dt").textContent=d.toLocaleDateString("ar-IQ",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
 const PH={d:{i:"أنا هنا. تفضّل، شنو تريد؟",s:"هدوء الليل. أنا هنا إن احتجت."},c:{i:"وصلت. قل، وبلا لفّ.",s:"الليل هادي. نادني إن لزم."}};
@@ -163,6 +164,8 @@ document.addEventListener("click",e=>{const el=e.target.closest("[data-a]");if(!
  else if(a=="duec")cmd(`due ${id} none`).then(()=>{drafts.dd=drafts.dt=undefined})
  else if(a=="ren"){const v=$("rn").value.trim();if(v)cmd(`rename task ${id} ${v}`).then(()=>{drafts.rn=undefined})}
  else if(a=="del")cmd(`delete task ${id}`)
+ else if(a=="yes"&&agentAsk)agentAnswer(true)
+ else if(a=="no"&&agentAsk)agentAnswer(false)
  else if(a=="yes"&&ask)cmd(null,ask.id)
  else if(a=="no"){ask=null;redraw()}});
 const AC=["#4fb3a0","#7a8fe0","#d2aa4f","#d98a60"],AUT=["سلبي","شريك","استباقي","مستقل"],DN=["س","أ","ن","ث","ر","خ","ج"];
@@ -181,13 +184,35 @@ function others(view,tk,gl,rm){({anzu:anzuView,habits:habitsView,goals:goalsView
 function anzuView(tk,gl){const f=guard([S.activity,chat,shortcuts,gl,prefs.aut]);if(f===null)return;
  const B=chat.map(c=>c.w=="u"?`<div class="bu">${esc(c.t)}<small>${c.time}</small></div>`:`<div class="ba">${c.card?`<div class="cd"><small>${c.card.k}</small><b>${esc(c.card.t)}</b></div>`:(c.lines||[c.t]).map(x=>`<div>${esc(x)}</div>`).join("")}<small>${c.time}</small></div>`).join("")||`<p class="mu">اكتب أمرًا، مثل: add اشتري خبز · list · help</p>`;
  $("main").innerHTML=`<p class="cap">CHAT // ANZU</p><h1>أنزو</h1>${bars()}<div class="chat" id="chatbox">${B}</div><div class="chips2">${shortcuts.map((s,i)=>`<span class="chip tb" data-b="csc" data-i="${i}">${esc(s.label)}</span>`).join("")}</div><div class="addb"><input id="chin" placeholder="اكتب أمرًا…" value="${esc(chatDraft)}"><button data-b="csend">إرسال</button></div>`;
- $("side").innerHTML=`<p class="cap">LIVE ACTIVITY</p><h1 style="font-size:20px">شنو يسوي أنزو الآن</h1>${act(6)}<p class="cap">APPROVAL</p>${ask?`<div class="ask">${esc(ask.text.replace(" Type yes to confirm.",""))}<br><button data-a="yes">موافق</button> <button data-a="no">لا</button></div>`:"<p class='mu'>لا شيء ينتظر موافقتك.</p>"}<p class="cap">AUTONOMY</p><p>المستوى: <b>${AUT[prefs.aut]}</b></p><small class="mu">يُطبَّق حين يوجد الذكاء الاصطناعي.</small><p class="cap">CONTEXT</p><div class="chips2">${gl.map(g=>`<span class="chip">${esc(g.title)}</span>`).join("")}</div>`;
+ $("side").innerHTML=`<p class="cap">LIVE ACTIVITY</p><h1 style="font-size:20px">شنو يسوي أنزو الآن</h1>${act(6)}<p class="cap">APPROVAL</p>${agentAsk?`<div class="ask">${esc(agentAsk.text)}<br><button data-a="yes">موافق</button> <button data-a="no">لا</button></div>`:ask?`<div class="ask">${esc(ask.text.replace(" Type yes to confirm.",""))}<br><button data-a="yes">موافق</button> <button data-a="no">لا</button></div>`:"<p class='mu'>لا شيء ينتظر موافقتك.</p>"}<p class="cap">AUTONOMY</p><p>المستوى: <b>${AUT[prefs.aut]}</b></p><small class="mu">مستوى الاستقلالية مُفعّل الآن. الحذف يطلب تأكيدك دائمًا.</small><p class="cap">CONTEXT</p><div class="chips2">${gl.map(g=>`<span class="chip">${esc(g.title)}</span>`).join("")}</div>`;
  const cb=$("chatbox");if(cb)cb.scrollTop=cb.scrollHeight;back(f)}
-async function chatSend(text){text=text.trim();if(!text)return;chatDraft="";const tm=new Date().toLocaleTimeString("ar-IQ",{hour:"numeric",minute:"2-digit"});chat.push({w:"u",t:text,time:tm});
- if(text=="help")chat.push({w:"a",lines:HELP,time:tm});else{const ok=await cmd(text),r=lastRes||{lines:[]};
+const ALLOWED=["add","done","reopen","link","rename task","delete task","priority","due","sub add","sub done","sub reopen","sub delete","goal","rename goal","delete goal","remind","unremind","habit add","habit check","habit uncheck","habit rename","habit note","habit delete","backup","restore","notify setup","notify show","notify test","notify on","notify off","autostart on","autostart off","list","goals","reminders","habits","backups","log","notify","autostart"];
+function isKnownCommand(t){const a=t.replace(/^ask\s+/i,"").trim();return ALLOWED.some(n=>a===n||a.startsWith(n+" "))}
+// Session memory: the last ~10 messages of THIS page session, kept in memory only (never on disk).
+let sessionMsgs=[];
+const nowT=()=>new Date().toLocaleTimeString("ar-IQ",{hour:"numeric",minute:"2-digit"});
+function remember(role,text){sessionMsgs.push({role,text});while(sessionMsgs.length>10)sessionMsgs.shift()}
+// Agent is working on something and may be waiting for the user's approval.
+let agentAsk=null,agentBusy=false;
+function agentState(){return agentBusy||agentAsk?"think":null}
+async function agentCall(payload){try{const res=await fetch("/api/agent",{method:"POST",headers:{"Content-Type":"application/json","X-Anzu-Token":TOKEN},body:JSON.stringify(payload)});const d=await res.json();
+ if(d.wait&&d.confirmId){agentAsk={id:d.confirmId,text:d.ask||(d.lines||[]).join(" ")};agentThink=true;redraw();return}
+ const lines=d.lines||[];chat.push({w:"a",lines:lines.length?lines:[d.reply||""]});remember("agent",lines.join(" "));agentThink=false;redraw();return}
+ catch{chat.push({w:"a",t:"تعذّر الاتصال بأنزو",time:nowT()})}}
+async function chatAgent(text){agentBusy=true;agentThink=true;redraw();
+ await agentCall({text,history:sessionMsgs.map(m=>({role:m.role,text:m.text}))});
+ agentBusy=false;agentThink=false;agentAsk=agentAsk;msg=null;chat=chat.slice(-100);SV("chat",chat);redraw()}
+ async function agentAnswer(approved){const id=agentAsk?agentAsk.id:null;if(!id)return;agentAsk=null;agentBusy=true;agentThink=true;redraw();
+ await agentCall({confirmId:id,approved});
+ agentBusy=false;agentThink=false;chat=chat.slice(-100);SV("chat",chat);redraw()}
+function chatSend(text){text=text.trim();if(!text)return;chatDraft="";const tm=nowT();chat.push({w:"u",t:text,time:tm});remember("user",text);
+ if(text=="help")chat.push({w:"a",lines:HELP,time:tm});
+ else if(isKnownCommand(text))cmd(text).then(()=>{const r=lastRes||{lines:[]};
   if(r.confirmId)chat.push({w:"a",lines:["أحتاج موافقتك:",...r.lines],time:tm});else if(r.fail)chat.push({w:"a",t:PH2[persona],time:tm});
-  else chat.push({w:"a",lines:r.lines,card:ok&&/^(done|habit check) /.test(text)?{k:text.startsWith("done")?"TASK DONE":"HABIT",t:r.lines[0]}:null,time:tm})}
- msg=null;chat=chat.slice(-100);SV("chat",chat);redraw()}
+  else chat.push({w:"a",lines:r.lines,card:r.ok&&/^(done|habit check) /.test(text)?{k:text.startsWith("done")?"TASK DONE":"HABIT",t:r.lines[0]}:null,time:tm});
+  msg=null;chat=chat.slice(-100);SV("chat",chat);redraw()});
+ else{chat.push({w:"a",t:"انتظر…",time:tm});chatAgent(text);}
+  msg=null;chat=chat.slice(-100);SV("chat",chat);redraw()}
 function habitsView(){const f=guard([S.habits,hTab,selHab,drafts.hin]);if(f===null)return;const H=S.habits||[],T=ymd(new Date());if(!H.find(h=>h.id==selHab))selHab=(H[0]||{}).id??null;
  const d0=new Date();d0.setDate(d0.getDate()-((d0.getDay()+1)%7));const wk=[...Array(7)].map((_,i)=>{const x=new Date(d0);x.setDate(d0.getDate()+i);return ymd(x)}),mo=[...Array(30)].map((_,i)=>shift(T,i-29));
  const sq=(h,d,i)=>{const on=h.days.includes(d),fu=d>T;return `<span class="hq ${on?"on":""} ${fu?"fut":""} ${d==T?"td":""}" ${fu?"":`data-b="hday" data-id="${h.id}" data-d="${d}" data-on="${on?1:0}"`}>${hTab=="week"?DN[i]:""}</span>`};
@@ -211,7 +236,7 @@ function settingsView(tk,gl){const f=guard([S.notify,S.backup,S.autostart,prefs,
  const opt=(a,i,n2)=>`<span class="opt ${a?"on":""}" data-b="${n2}" data-i="${i}">${AUT[i]}</span>`,tg=(on,i)=>`<span class="tgl ${on?"on":""}" data-b="ap" data-i="${i}"><i></i></span>`;
  const ap=["يطلب موافقتي قبل إرسال أي رسالة","يطلب موافقتي قبل تعديل المهام المهمة","يطلب موافقتي قبل حذف أي ذاكرة"];
  $("main").innerHTML=`<p class="cap">SETTINGS</p><h1>الإعدادات</h1>${bars()}
- <p class="cap">AUTONOMY</p><p>كم تريد أنزو يتصرف من نفسه؟ <small class="mu">(يُحفظ الآن ويُطبَّق حين يوجد الذكاء الاصطناعي. حذف أي شيء يطلب تأكيدك دائمًا.)</small></p><div class="opts">${AUT.map((_,i)=>opt(prefs.aut==i,i,"aut")).join("")}</div>
+ <p class="cap">AUTONOMY</p><p>كم تريد أنزو يتصرف من نفسه؟ <small class="mu">(المستوى مُفعّل الآن مع الذكاء الاصطناعي. حذف أي شيء يطلب تأكيدك دائمًا.)</small></p><div class="opts">${AUT.map((_,i)=>opt(prefs.aut==i,i,"aut")).join("")}</div>
  <p class="cap">APPROVALS</p>${ap.map((t,i)=>`<div class="row"><span>${t}</span>${tg(prefs.ap[i],i)}</div>`).join("")}
  <p class="cap">PHONE</p><div class="row"><span>إشعارات الهاتف: <b>${n.ready?(n.enabled?"مفعّلة":"متوقفة"):"غير مُعدّة"}</b>${n.topic?` · الموضوع ${esc(n.topic)}`:""} · منتظر ${n.waiting??0}${n.problem?` · مشكلة: ${esc(n.problem)}`:""}</span></div><div class="btns wrap"><button data-b="run" data-c="notify setup">${n.ready?"موضوع جديد":"إعداد الهاتف"}</button>${n.ready?`<button data-b="run" data-c="${n.enabled?"notify off":"notify on"}">${n.enabled?"إيقاف":"تشغيل"}</button><button data-b="run" data-c="notify show">إظهار الموضوع</button><button data-b="run" data-c="notify test">إرسال تجربة</button>`:""}</div>
  <p class="cap">BACKUP</p><div class="btns wrap"><button data-b="run" data-c="backup">نسخة احتياطية الآن</button></div>${bk.map(b=>`<div class="row"><span><span dir="ltr">${esc(b.name)}</span> <small class="mu">${esc(b.info)}</small></span><button data-b="run" data-c="restore ${esc(b.name)}">استرجاع</button></div>`).join("")||"<p class='mu'>لا نسخ بعد.</p>"}<small class="mu">النسخة تشمل المهام والأهداف فقط. للتذكيرات والعادات استعمل «تصدير بياناتي».</small>
@@ -259,7 +284,7 @@ function draw(){if(!S)return;const slot=view=="home"?$("hr"):$("sr");if($("raven
  const now=Date.now()<alertUntil;const st=state();$("raven").className="st-"+st+" flip";document.body.dataset.st=st;$("on").textContent=st=="off"?"● OFFLINE":st=="net"?"● NO INTERNET":"● ONLINE";
  $("mood").textContent=st.toUpperCase();
  if(view=="home"){home(st,rm,tk);return;}
- if(view=="anzu"){m=`<p class="cap">ANZU // CHAT</p><h1>أنزو</h1><div class="row"><b>المحادثة مع أنزو قريبًا</b><small>تحتاج الذكاء الاصطناعي</small></div>`;}
+ if(view=="anzu"){m=`<p class="cap">ANZU // CHAT</p><h1>أنزو</h1><div class="row"><b>المحادثة مع أنزو</b><small>الذكاء الاصطناعي متصل — اكتب أو اضغط على الأقسام</small></div>`;}
  if(view=="habits"){m=`<p class="cap">HABITS</p><h1>العادات</h1><div class="row"><b>العادات قريبًا</b><small>سنصمّمها بعد المهام</small></div>`;}
  if(view=="tasks"){tasksView(tk,gl,rm);return;}
  if(["anzu","habits","goals","settings"].includes(view)){others(view,tk,gl,rm);return;}
@@ -278,3 +303,4 @@ async function poll(){try{S=await (await fetch("/api/state")).json();offline=fal
  seenKey=k;draw();}catch{offline=true;draw()}}
 function hash(){if(document.activeElement)document.activeElement.blur();lastSig="";const h=location.hash.slice(1).split("/");view=h[0]||"home";force=h[1]||null;draw()}addEventListener("hashchange",hash);wv.innerHTML="<i></i>".repeat(34);$("wv2").innerHTML="<i></i>".repeat(30);hash();clock();setInterval(clock,1000);poll();setInterval(poll,3000);setInterval(draw,1000);
 </script></body></html>
+<h2 style="color:#d98a60;font-family:Georgia">التقدم — 4/4 مراحل</h2><ul style="color:#f1e4d8"><li>✅ المرحلة 1 — تنظيف + tsconfig + .env</li><li>✅ المرحلة 2 — ask + runAgentLoop + Arabic error</li><li>✅ المرحلة 3 — أدوات كاملة (tasks/goals/habits/reminders)</li><li>✅ المرحلة 4 — web 4747 + raven.svg + تاكيد + .env محلي</li></ul><p style="color:#a88a76">الرابط: http://localhost:4747/ | الأمر: npm run web</p>

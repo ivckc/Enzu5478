@@ -5,7 +5,8 @@
   "main": "hello.js",
   "scripts": {
     "test": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "web": "tsx src/web/server.ts"
   },
   "keywords": [],
   "author": "",

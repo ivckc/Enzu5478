@@ -1,6 +1,7 @@
-// Confirmation System - Handles user confirmations for sensitive/write actions
+// Confirmation System - uses a callback so the main readline loop handles the prompt.
+// The agent loop passes a confirmFn; if none is provided it auto-approves (for tests).
 
-import * as readline from 'node:readline';
+export type ConfirmFn = (question: string) => Promise<boolean>;
 
 export type ConfirmationRequest = {
   toolName: string;
@@ -10,59 +11,35 @@ export type ConfirmationRequest = {
 
 export type ConfirmationResult = {
   approved: boolean;
-  userInput: string;
 };
 
-// Readline interface for CLI
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
+/**
+ * Ask the user for confirmation via the provided callback.
+ * The callback receives a human-readable question and returns true/false.
+ */
+export async function requestConfirmation(
+  req: ConfirmationRequest,
+  confirmFn: ConfirmFn,
+): Promise<ConfirmationResult> {
+  const question =
+    `[تأكيد] ${req.toolName}: ${req.summary}` +
+    (req.detail ? `\n  ${req.detail}` : '') +
+    '\nاكتب yes أو نعم للموافقة:';
 
-function closeReadline(): void {
-  // Don't close, let the main app manage it
+  const approved = await confirmFn(question);
+  return { approved };
 }
 
-function question(prompt: string): Promise<string> {
-  return new Promise((resolve) => {
-    rl.question(prompt, (answer) => {
-      resolve(answer.trim().toLowerCase());
+/**
+ * A ConfirmFn implementation that works inside the main readline loop.
+ * Call makeLineFn(resolve) to produce a one-shot listener; the loop
+ * removes it after the first answer.
+ */
+export function makeConfirmFn(
+  onQuestion: (question: string, resolve: (answer: boolean) => void) => void,
+): ConfirmFn {
+  return (question) =>
+    new Promise<boolean>((resolve) => {
+      onQuestion(question, (answer) => resolve(answer));
     });
-  });
-}
-
-/**
- * Ask user for confirmation on a tool execution
- * Returns true if approved, false if cancelled
- */
-export async function requestConfirmation(req: ConfirmationRequest): Promise<ConfirmationResult> {
-  const lines = [
-    '',
-    `[CONFIRMATION] ${req.toolName}`,
-    `Summary: ${req.summary}`,
-  ];
-
-  if (req.detail) {
-    lines.push(`Detail: ${req.detail}`);
-  }
-
-  lines.push('Type "yes" to confirm, anything else to cancel.');
-  lines.push('anzu> ');
-
-  console.log(lines.join('\n'));
-
-  const answer = await question('');
-  const approved = answer === 'yes' || answer === 'y' || answer === 'نعم';
-
-  return {
-    approved,
-    userInput: answer,
-  };
-}
-
-/**
- * Check if a tool execution requires confirmation based on risk level
- */
-export function requiresConfirmation(riskLevel: 'read' | 'write' | 'sensitive'): boolean {
-  return riskLevel !== 'read';
 }

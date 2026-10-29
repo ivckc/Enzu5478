@@ -42,14 +42,22 @@ export type Result = {
   logs?: LogInfo[]; // what to write in the activity log
   notices?: Notice[]; // what to also send outside this window
   confirm?: () => Result; // if set: wait for "yes", then run this
+  // For async commands (e.g., agent loop): once this Promise resolves,
+  // its Result replaces this one (including any new confirm()).
+  _async?: Promise<Result>;
 };
 
 // One command, for example "add" or "rename task".
+// run() may return a Promise for async commands (e.g. the agent "ask" command).
 export type Command = {
   name: string; // what the user types
   usage: string; // shown in help
   about: string; // shown in help
-  run: (rest: string) => Result;
+  run: (rest: string) => Result | Promise<Result>;
+};
+
+export type AsyncResult<T = any> = Result & {
+  _async: Promise<T>;
 };
 
 // Something that runs by itself, again and again (for example: check reminders).

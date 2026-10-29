@@ -65,7 +65,7 @@ export class OpenAICompatibleProvider implements LLMProvider {
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
-      const data: LLMResponse = await response.json();
+      const data = await response.json() as LLMResponse;
       return data;
     } catch (e) {
       throw new Error(`LLM request failed: ${String(e)}`);

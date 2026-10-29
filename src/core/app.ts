@@ -78,6 +78,19 @@ export function startApp(modules: Module[], greeting: () => string): void {
     if (result.confirm !== undefined && ask) {
       pending = result.confirm;
     }
+
+    // Support async commands that return a Promise (e.g., the agent loop).
+    if ("_async" in result && result._async instanceof Promise) {
+      result._async
+        .then((asyncResult: Result) => {
+          if (asyncResult.confirm !== undefined) {
+            pending = asyncResult.confirm;
+          } else {
+            show(asyncResult);
+          }
+        })
+        .catch(() => {});
+    }
   }
 
   // Used by the web page: same effects (log, notices), but nothing is printed here
@@ -97,7 +110,13 @@ export function startApp(modules: Module[], greeting: () => string): void {
     if (command === null) {
       return { ok: false, lines: ["I did not understand that command."] };
     }
-    return toOutcome(command.run(text.slice(command.name.length).trim()));
+    const result = command.run(text.slice(command.name.length).trim());
+    // The web runner is synchronous; async commands (ask) are not supported
+    // from the web page — return a placeholder.
+    if (result instanceof Promise) {
+      return { ok: false, lines: ["This command is not available from the web interface."] };
+    }
+    return toOutcome(result);
   });
 
   // Shows something that was not asked for (like a reminder), without
@@ -191,7 +210,28 @@ export function startApp(modules: Module[], greeting: () => string): void {
       console.log(`I did not understand "${word}". Type help.`);
       return;
     }
-    show(command.run(text.slice(command.name.length).trim()));
+    const outcome = command.run(text.slice(command.name.length).trim());
+    if (outcome instanceof Promise) {
+      // Async command (e.g. "ask"): show a spinner line immediately,
+      // then print the real result when the promise resolves.
+      console.log("...");
+      outcome
+        .then((result: Result | Promise<Result>) => {
+          if (result instanceof Promise) {
+            result.then((final) => showByItself(final));
+          } else {
+            showByItself(result);
+          }
+        })
+        .catch((err: unknown) =>
+          showByItself({
+            ok: false,
+            lines: [`Error: ${err instanceof Error ? err.message : String(err)}`],
+          })
+        );
+    } else {
+      show(outcome);
+    }
   }
 
   rl.setPrompt("anzu> ");
