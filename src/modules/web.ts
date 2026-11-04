@@ -14,8 +14,16 @@ import type { ConfirmFn } from "../agent/confirmation";
 
 const PORT = 4747;
 const HOST = "127.0.0.1"; // this computer only
-const FILES: Record<string, string> = { "/": "index.html", "/raven.svg": "raven.svg" };
-const TYPES: Record<string, string> = { ".html": "text/html; charset=utf-8", ".svg": "image/svg+xml" };
+const FILES: Record<string, string> = { "/": "index.html",
+  "/raven.svg": "raven.svg",
+  "/anzu-theme.css": "anzu-theme.css",
+  "/anzu-raven.js": "anzu-raven.js",
+  "/anzu-ui.js": "anzu-ui.js"};
+const TYPES: Record<string, string> = { 
+  ".html": "text/html; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".css": "text/css; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8", };
 
 // The page may only run these commands (not backup, restore, autostart, ...).
 const ALLOWED = [

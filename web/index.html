@@ -70,7 +70,9 @@ label{display:block;margin:8px 0;color:var(--mu);font-size:13px}label input,labe
 .row button{cursor:pointer}.chip[data-b]{cursor:pointer}
 
 @media(max-width:900px){.app{grid-template-columns:1fr}}
-</style></head><body><div class="app" id="app">
+</style>
+<link rel="stylesheet" href="/anzu-theme.css">
+</head><body><div class="app" id="app">
 <aside class="box"><div class="logo">A.N.Z.U</div><div id="sr"><div id="raven"></div></div><p class="cap" id="mood"></p><nav id="nav"></nav></aside>
 <main class="box" id="main"></main>
 <aside class="box" id="side"></aside></div>
@@ -302,5 +304,8 @@ async function poll(){try{S=await (await fetch("/api/state")).json();offline=fal
   if(r){alertUntil=Date.now()+10000;fired=r.detail.replace(/^#\d+\s*/,"")}else if(f.some(a=>a.ok&&a.actor=="anzu"))okUntil=Date.now()+1600}
  seenKey=k;draw();}catch{offline=true;draw()}}
 function hash(){if(document.activeElement)document.activeElement.blur();lastSig="";const h=location.hash.slice(1).split("/");view=h[0]||"home";force=h[1]||null;draw()}addEventListener("hashchange",hash);wv.innerHTML="<i></i>".repeat(34);$("wv2").innerHTML="<i></i>".repeat(30);hash();clock();setInterval(clock,1000);poll();setInterval(poll,3000);setInterval(draw,1000);
-</script></body></html>
+</script>
+<script src="/anzu-raven.js"></script>
+<script src="/anzu-ui.js"></script>
+</body></html>
 <h2 style="color:#d98a60;font-family:Georgia">التقدم — 4/4 مراحل</h2><ul style="color:#f1e4d8"><li>✅ المرحلة 1 — تنظيف + tsconfig + .env</li><li>✅ المرحلة 2 — ask + runAgentLoop + Arabic error</li><li>✅ المرحلة 3 — أدوات كاملة (tasks/goals/habits/reminders)</li><li>✅ المرحلة 4 — web 4747 + raven.svg + تاكيد + .env محلي</li></ul><p style="color:#a88a76">الرابط: http://localhost:4747/ | الأمر: npm run web</p>
