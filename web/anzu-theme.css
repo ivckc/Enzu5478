@@ -440,6 +440,7 @@
   outline: none;
 }
 .anzu-bar input::placeholder { color: var(--a-muted); }
+.anzu-bar input:focus-visible { outline: none; }
 .anzu-mic {
   flex: none;
   width: 36px;
@@ -563,6 +564,15 @@
 .anzu-status[data-state="speaking"] i { animation: anzu-pulse 0.45s ease-in-out infinite; background: var(--a-accent-2); }
 .anzu-status[data-state="error"] { color: #ff6b6b; border-color: #a33; }
 .anzu-status[data-state="error"] i { background: #ff4b4b; }
+.anzu-status[data-state="think"] i { animation: anzu-pulse 0.7s ease-in-out infinite; }
+.anzu-status[data-state="alert"] { color: #ffd37a; border-color: #b8862b; }
+.anzu-status[data-state="alert"] i { background: #ffc04d; animation: anzu-pulse 0.45s ease-in-out infinite; }
+.anzu-status[data-state="ok"] i { background: #7fc79a; }
+.anzu-status[data-state="off"],
+.anzu-status[data-state="net"] { color: #ff6b6b; border-color: #a33; }
+.anzu-status[data-state="off"] i,
+.anzu-status[data-state="net"] i { background: #ff4b4b; }
+.anzu-status[data-state="sleep"] { opacity: 0.6; }
 
 /* ---------- 7d. Sidebar (sections backup for voice / chat) ---------- */
 .anzu-side {

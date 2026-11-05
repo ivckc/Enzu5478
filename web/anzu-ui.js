@@ -23,7 +23,9 @@
   var CARD_STYLES = ['feather', 'tech'];
   var THEMES = ['copper', 'crimson', 'blue'];
   var S = { root: null, cards: null, grid: null, cfg: {}, data: {}, mode: 'home', timer: null, status: 'idle', section: 'home' };
-  var LABELS = { idle: 'جاهز', listening: 'يسمع', thinking: 'يفكر', working: 'يعمل', speaking: 'يحچي', error: 'صار خطأ' };
+  var LABELS = { idle: 'جاهز', listening: 'يسمع', thinking: 'يفكر', working: 'يعمل', speaking: 'يحچي', error: 'صار خطأ',
+    /* states used by the real page (web/index.html -> state()) */
+    think: 'يفكر', alert: 'تذكير', ok: 'تم', off: 'منقطع', net: 'بلا إنترنت', sleep: 'نايم' };
 
   /* ---------- helpers ---------- */
   function esc(s) {
@@ -232,7 +234,7 @@
     if (!S.root) return;
     var el = S.root.querySelector('.anzu-status');
     if (el) { el.dataset.state = st; el.querySelector('span').textContent = LABELS[st]; }
-    if (st === 'thinking' || st === 'working') S.root.dataset.busy = '1'; else delete S.root.dataset.busy;
+    if (st === 'thinking' || st === 'think' || st === 'working') S.root.dataset.busy = '1'; else delete S.root.dataset.busy;
   }
 
   function setActive(id) {
@@ -252,9 +254,11 @@
 
   function go(intent) {
     if (intent.section === 'home') { home(); return Promise.resolve(true); }
-    if (intent.section === 'chat') {
-      if (S.cfg.onNavigate) S.cfg.onNavigate('chat');
-      else if (S.cfg.onUnknown) S.cfg.onUnknown('');
+    /* sections that open a real page instead of a card (default: only the chat) */
+    var navSections = S.cfg.navigate || ['chat'];
+    if (navSections.indexOf(intent.section) >= 0) {
+      if (S.cfg.onNavigate) S.cfg.onNavigate(intent.section);
+      else if (intent.section === 'chat' && S.cfg.onUnknown) S.cfg.onUnknown('');
       return Promise.resolve(true);
     }
     setActive(intent.section);
@@ -357,7 +361,7 @@
       root.appendChild(st);
     }
 
-    if (!root.querySelector('.anzu-side')) {
+    if (S.cfg.sidebar !== false && !root.querySelector('.anzu-side')) {
       var ICON = function (p) {
         return '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
       };
@@ -424,7 +428,7 @@
       input.addEventListener('keydown', function (e) {
         if (e.key !== 'Enter' || e.isComposing) return;
         var v = input.value.trim();
-        if (!v || !detect(v)) return;
+        if (!v) return;
         e.preventDefault();
         e.stopImmediatePropagation();
         input.value = '';
@@ -442,6 +446,6 @@
     return API;
   }
 
-  var API = { init: init, run: run, go: go, home: home, setStatus: setStatus, setCardStyle: setCardStyle, setTheme: setTheme };
+  var API = { init: init, run: run, go: go, home: home, setStatus: setStatus, setCardStyle: setCardStyle, setTheme: setTheme, renderAppearance: renderAppearance };
   global.AnzuUI = API;
 })(window);
