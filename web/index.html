@@ -72,7 +72,7 @@ label{display:block;margin:8px 0;color:var(--mu);font-size:13px}label input,labe
 @media(max-width:900px){.app{grid-template-columns:1fr}}
 </style>
 <link rel="stylesheet" href="/anzu-theme.css">
-<style>#home-view{display:none}.home #home-view{display:block}</style>
+<style>#home-view{display:none}.home #home-view{display:block}#nav{display:none}</style>
 </head><body><div class="app" id="app">
 <aside class="box"><div class="logo">A.N.Z.U</div><div id="sr"><div id="raven"></div></div><p class="cap" id="mood"></p><nav id="nav"></nav></aside>
 <main class="box" id="main"></main>
@@ -302,7 +302,7 @@ document.addEventListener("click",e=>{const el=e.target.closest("[data-b]");if(!
 function draw(){if(!S)return;const slot=view=="home"?$("hr"):$("sr");if($("raven").parentNode!==slot)slot.appendChild($("raven"));nav();document.body.className=view=="home"?"home":(["tasks","habits","anzu"].includes(view)?"v-voice":"");
  const tk=S.tasks,gl=S.goals,rm=(S.reminders||[]).filter(r=>r.status=="pending");let m="",s="";
  const now=Date.now()<alertUntil;const st=state();$("raven").className="st-"+st+" flip";document.body.dataset.st=st;if(window.AnzuUI)AnzuUI.setStatus(st);$("on").textContent=st=="off"?"● OFFLINE":st=="net"?"● NO INTERNET":"● ONLINE";
- $("mood").textContent=st.toUpperCase();
+ $("mood").textContent=st.toUpperCase();if(window.AnzuUI)AnzuUI.setActive(view);
  if(view=="home"){home(st,rm,tk);return;}
  if(view=="anzu"){m=`<p class="cap">ANZU // CHAT</p><h1>أنزو</h1><div class="row"><b>المحادثة مع أنزو</b><small>الذكاء الاصطناعي متصل — اكتب أو اضغط على الأقسام</small></div>`;}
  if(view=="habits"){m=`<p class="cap">HABITS</p><h1>العادات</h1><div class="row"><b>العادات قريبًا</b><small>سنصمّمها بعد المهام</small></div>`;}
@@ -329,14 +329,14 @@ function hash(){if(document.activeElement)document.activeElement.blur();lastSig=
 const anzuState = () => fetch("/api/state").then(r => r.json());
 AnzuUI.init({
   root: "#home-view",
-  sidebar: false,
+  shell: true,
   navigate: ["chat", "settings"],
   data: {
     tasks: () => anzuState().then(s => s.tasks.map(t => ({ title: t.title, done: t.done, due: t.due ? t.due + "T" + (t.dueTime || "00:00") : null }))),
     habits: () => anzuState().then(s => { const T = ymd(new Date()); return (s.habits || []).map(h => ({ title: h.title, streak: hst(h).streak, doneToday: h.days.includes(T) })); }),
     goals: () => anzuState().then(s => s.goals.map(g => { const k = s.tasks.filter(t => t.goalId === g.id); return { title: g.title, progress: k.length ? Math.round(100 * k.filter(t => t.done).length / k.length) : 0 }; }))
   },
-  onNavigate: (w) => go(w === "chat" ? "anzu" : w),
+  onNavigate: (w) => { if (w === "home") AnzuUI.home(); go(w === "chat" ? "anzu" : w); },
   onUnknown: (text) => { go("anzu"); chatSend(text); }
 });
 </script>

@@ -238,8 +238,9 @@
   }
 
   function setActive(id) {
+    if (id === 'anzu') id = 'chat';          /* the page calls the chat route "anzu" */
     S.section = id;
-    S.root.querySelectorAll('.anzu-side-item').forEach(function (b) {
+    document.querySelectorAll('.anzu-side-item').forEach(function (b) {
       if (b.dataset.id === id) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
     });
   }
@@ -261,7 +262,7 @@
       else if (intent.section === 'chat' && S.cfg.onUnknown) S.cfg.onUnknown('');
       return Promise.resolve(true);
     }
-    setActive(intent.section);
+    if (!S.cfg.shell) setActive(intent.section);
     if (intent.section === 'settings') {
       setStatus('idle');
       showCards(settingsCards());
@@ -361,7 +362,7 @@
       root.appendChild(st);
     }
 
-    if (S.cfg.sidebar !== false && !root.querySelector('.anzu-side')) {
+    if ((S.cfg.shell || S.cfg.sidebar !== false) && !document.querySelector('.anzu-side')) {
       var ICON = function (p) {
         return '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
       };
@@ -388,13 +389,23 @@
         if (!b) return;
         if (b.classList.contains('anzu-side-toggle')) {
           nav.dataset.open = nav.dataset.open === '1' ? '0' : '1';
+          document.documentElement.dataset.anzuSideOpen = nav.dataset.open;
           store(KEY.side, nav.dataset.open);
           return;
         }
         var id = b.dataset.id;
+        /* shell mode: the sidebar opens the REAL pages (the page decides how) */
+        if (S.cfg.shell && S.cfg.onNavigate) { S.cfg.onNavigate(id); return; }
         go(id === 'tasks' ? { section: 'tasks', period: 'all' } : { section: id });
       });
-      root.appendChild(nav);
+      document.documentElement.dataset.anzuSideOpen = nav.dataset.open;
+      if (S.cfg.shell) {
+        nav.dataset.shell = '1';
+        document.documentElement.dataset.anzuShell = '1';
+        document.body.appendChild(nav);
+      } else {
+        root.appendChild(nav);
+      }
     }
   }
 
@@ -446,6 +457,6 @@
     return API;
   }
 
-  var API = { init: init, run: run, go: go, home: home, setStatus: setStatus, setCardStyle: setCardStyle, setTheme: setTheme, renderAppearance: renderAppearance };
+  var API = { init: init, run: run, go: go, home: home, setStatus: setStatus, setActive: setActive, setCardStyle: setCardStyle, setTheme: setTheme, renderAppearance: renderAppearance };
   global.AnzuUI = API;
 })(window);

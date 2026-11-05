@@ -627,6 +627,25 @@
   border-inline-start-color: var(--a-accent);
 }
 
+/* ---------- 7e. App shell: the sidebar on every page ---------- */
+.anzu-side[data-shell] {
+  position: fixed;
+  left: 16px;
+  top: 16px;
+  bottom: 16px;
+  z-index: 50;
+  background: var(--a-card);
+  transition: width 0.45s var(--a-ease), opacity 0.3s ease, border-color 0.3s ease,
+    top 0.45s var(--a-ease), bottom 0.45s var(--a-ease);
+}
+body.home .anzu-side[data-shell] { top: 120px; bottom: 120px; }
+html[data-anzu-shell] .app { padding-left: 84px; transition: padding-left 0.45s var(--a-ease); }
+html[data-anzu-shell][data-anzu-side-open="1"] .app { padding-left: 208px; }
+@media (max-width: 900px) {
+  html[data-anzu-shell] .app { padding-left: 72px; }
+  html[data-anzu-shell][data-anzu-side-open="1"] .app { padding-left: 72px; }
+}
+
 /* ---------- 8. Keyframes ---------- */
 @keyframes anzu-card-in { to { opacity: 1; transform: none; } }
 @keyframes anzu-row-in  { to { opacity: 1; transform: none; } }
