@@ -675,3 +675,127 @@ html[data-anzu-shell][data-anzu-side-open="1"] .app { padding-left: 208px; }
   .anzu-home [data-anzu-raven] { width: 190px; height: 190px; }
   .anzu-cards { bottom: 130px; }
 }
+
+/* ---------- 12. Inner pages skin: restyles the EXISTING pages (tasks, habits, goals, chat, settings) ---------- */
+
+/* The old page variables now follow the active theme.
+   (!important also beats the old inline accent colour that the old page sets from JavaScript.) */
+:root {
+  --bg: var(--a-bg) !important;
+  --ln: var(--a-line-strong) !important;
+  --tx: var(--a-text) !important;
+  --mu: var(--a-muted) !important;
+  --ac: var(--a-accent) !important;
+}
+body {
+  font-family: var(--a-font-body);
+  color: var(--a-text);
+  background: linear-gradient(180deg, var(--a-bg-1) 0%, var(--a-bg-2) 55%, var(--a-bg-3) 100%) fixed;
+}
+
+/* typography */
+.app h1 { font-family: var(--a-font-title); font-weight: 700; font-size: 30px; margin: 0 0 16px; }
+.app .cap { font-family: var(--a-font-mono); letter-spacing: 3px; color: var(--a-accent); }
+.app .logo { font-family: var(--a-font-title); color: var(--a-accent-2); }
+
+/* layout: the cards stay in place, only their content scrolls */
+.app { height: 100vh; min-height: 0; gap: 18px; }
+.app > .box {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--a-line-strong) transparent;
+}
+
+/* the cards: feather edge (default) */
+.app > .box {
+  border: 0;
+  border-radius: 0;
+  padding: 24px 26px;
+  background:
+    linear-gradient(to top right, transparent calc(50% - 0.7px), var(--a-line-strong) calc(50% - 0.7px), var(--a-line-strong) calc(50% + 0.7px), transparent calc(50% + 0.7px)) top right / var(--a-cut) var(--a-cut) no-repeat,
+    linear-gradient(to top right, transparent calc(50% - 0.7px), var(--a-line-strong) calc(50% - 0.7px), var(--a-line-strong) calc(50% + 0.7px), transparent calc(50% + 0.7px)) bottom left / var(--a-cut) var(--a-cut) no-repeat,
+    var(--a-card);
+  box-shadow: inset 0 0 0 1px var(--a-line-strong);
+  clip-path: polygon(0 0, calc(100% - var(--a-cut)) 0, 100% var(--a-cut), 100% 100%, var(--a-cut) 100%, 0 calc(100% - var(--a-cut)));
+}
+/* the cards: technical dashed style */
+html[data-anzu-card="tech"] .app > .box {
+  clip-path: none;
+  box-shadow: none;
+  border: 1px dashed var(--a-line-strong);
+  background-origin: border-box;
+  background:
+    linear-gradient(var(--a-accent), var(--a-accent)) top right / 14px 2px no-repeat,
+    linear-gradient(var(--a-accent), var(--a-accent)) top right / 2px 14px no-repeat,
+    linear-gradient(var(--a-accent), var(--a-accent)) bottom left / 14px 2px no-repeat,
+    linear-gradient(var(--a-accent), var(--a-accent)) bottom left / 2px 14px no-repeat,
+    var(--a-card);
+}
+
+/* tabs and chips */
+.app .chip { border-color: var(--a-line-strong); color: var(--a-accent-2); background: transparent; }
+.app .tabs .on, .app .tb.on { background: var(--a-glow); color: var(--a-text); border-color: var(--a-accent); }
+
+/* rows */
+.app .row, .app .tr, .app .hr { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--a-line); }
+.app .tr, .app .hr { transition: border-color 0.2s ease, background 0.2s ease; }
+.app .tr:hover, .app .hr:hover { border-color: var(--a-line-strong); }
+.app .tr.sel, .app .hr.sel { border-color: var(--a-accent); background: var(--a-glow); box-shadow: none; }
+.app .ck { border-color: var(--a-accent); }
+.app .ck.on { background: var(--a-accent); color: var(--a-on-accent); }
+.app .sq { border-color: var(--a-accent); }
+.app .sq.on { background: var(--a-accent); }
+.app .sr { border-bottom-color: var(--a-line); }
+.app .act { border-inline-start-color: var(--a-line-strong); }
+.app .ring { background: conic-gradient(var(--a-accent) calc(var(--p) * 1%), var(--a-line) 0); }
+.app .ring i { background: var(--a-card); font-family: var(--a-font-title); font-size: 26px; }
+.app .bar2 { background: var(--a-line); }
+.app .bar2 i { background: var(--a-accent); }
+
+/* habits */
+.app .hq { background: var(--a-card); border-color: var(--a-line); }
+.app .hq.on { background: var(--a-accent); border-color: var(--a-accent); color: var(--a-on-accent); }
+.app .hq.td { outline-color: var(--a-accent-2); }
+
+/* inputs and buttons */
+.app select, .app button, .app input {
+  background: var(--a-card);
+  color: var(--a-text);
+  border: 1px solid var(--a-line-strong);
+  border-radius: 0;
+  font-family: var(--a-font-body);
+}
+.app button, .app select { transition: border-color 0.2s ease, color 0.2s ease, filter 0.2s ease; }
+.app button:hover, .app select:hover { border-color: var(--a-accent); color: var(--a-accent-2); }
+.app .addb input { border: 1px dashed var(--a-line-strong); }
+.app .addb button, .app .addb button:hover { background: var(--a-accent); color: #fff; border: 0; }
+.app .addb button:hover { filter: brightness(1.12); }
+.app .dng, .app .dng:hover { border-color: #8a4a4a; color: #e58a7a; }
+.app input:focus-visible, .app select:focus-visible, .app button:focus-visible { outline: 2px solid var(--a-accent-2); outline-offset: 1px; }
+
+/* settings controls */
+.app .opt { background: transparent; border-color: var(--a-line-strong); transition: border-color 0.2s ease, background 0.2s ease; }
+.app .opt.on { border-color: var(--a-accent); color: var(--a-accent-2); background: var(--a-glow); }
+.app .tgl { border-color: var(--a-line-strong); }
+.app .tgl.on { border-color: var(--a-accent); }
+.app .tgl i { background: var(--a-muted); }
+.app .tgl.on i { background: var(--a-accent); }
+.app .btn2 { border-color: var(--a-accent); }
+.app .rf { border-color: var(--a-line-strong); }
+
+/* messages, approvals, chat */
+.app .ask, .app .msg, .app .cd { background: rgba(255, 255, 255, 0.02); }
+.app .ask { border-color: var(--a-accent); }
+.app .bu { background: rgba(255, 255, 255, 0.03); border-color: var(--a-line-strong); }
+.app .ba { background: var(--a-card); border-color: var(--a-accent); }
+/* chat page: the message list fills the card, the input stays at the bottom */
+.app > .box:has(.chat) { display: flex; flex-direction: column; overflow: hidden; }
+.app .chat { flex: 1 1 auto; height: auto; min-height: 120px; scrollbar-width: thin; scrollbar-color: var(--a-line-strong) transparent; }
+.vbar { background: var(--a-bar-bg); border-color: var(--a-line-strong); }
+
+@media (max-width: 900px) {
+  .app { height: auto; }
+  .app > .box { overflow: visible; }
+}
+
