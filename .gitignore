@@ -11,3 +11,4 @@ anzu.lock
 anzu-run.cmd
 *.lnk
 habits.json
+data/

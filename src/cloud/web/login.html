@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ANZU - تسجيل الدخول</title>
+<style>
+  :root { --bg:#0b0b0d; --card:#15151a; --line:#2a2a31; --text:#ece7df; --muted:#8c8c95; --accent:#C1613A; }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+         background:var(--bg); color:var(--text); font-family: Tahoma, Arial, sans-serif; padding:16px; }
+  .card { width:100%; max-width:380px; background:var(--card); border:1px solid var(--line);
+          border-radius:14px; padding:24px; }
+  h1 { margin:0 0 4px; letter-spacing:6px; text-align:center; color:var(--accent); font-size:26px; }
+  p.sub { text-align:center; color:var(--muted); margin:0 0 20px; font-size:14px; }
+  .tabs { display:flex; gap:8px; margin-bottom:16px; }
+  .tabs button { flex:1; padding:10px; background:transparent; color:var(--muted);
+                 border:1px solid var(--line); border-radius:8px; cursor:pointer; font-size:15px; }
+  .tabs button.active { color:var(--text); border-color:var(--accent); }
+  label { display:block; font-size:13px; color:var(--muted); margin:12px 0 6px; }
+  input { width:100%; padding:12px; background:#0f0f13; color:var(--text);
+          border:1px solid var(--line); border-radius:8px; font-size:16px; direction:ltr; text-align:left; }
+  input:focus { outline:none; border-color:var(--accent); }
+  .go { width:100%; margin-top:20px; padding:13px; background:var(--accent); color:#fff;
+        border:0; border-radius:8px; font-size:16px; cursor:pointer; }
+  .go:disabled { opacity:.6; }
+  .err { color:#ff7b7b; font-size:14px; margin-top:12px; min-height:20px; text-align:center; }
+  .hide { display:none; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>A.N.Z.U</h1>
+  <p class="sub">مساعدك الشخصي</p>
+
+  <div class="tabs">
+    <button id="tabLogin" class="active" type="button">دخول</button>
+    <button id="tabReg" type="button">حساب جديد</button>
+  </div>
+
+  <label for="u">اسم المستخدم</label>
+  <input id="u" autocomplete="username" autocapitalize="none">
+
+  <label for="p">كلمة المرور</label>
+  <input id="p" type="password" autocomplete="current-password">
+
+  <div id="inviteBox" class="hide">
+    <label for="c">كود الدعوة</label>
+    <input id="c" autocomplete="off">
+  </div>
+
+  <button id="go" class="go" type="button">دخول</button>
+  <div id="err" class="err"></div>
+</div>
+
+<script>
+  var mode = "login";
+  var $ = function (id) { return document.getElementById(id); };
+
+  function setMode(m) {
+    mode = m;
+    $("tabLogin").className = m === "login" ? "active" : "";
+    $("tabReg").className = m === "register" ? "active" : "";
+    $("inviteBox").className = m === "register" ? "" : "hide";
+    $("go").textContent = m === "login" ? "دخول" : "إنشاء الحساب";
+    $("p").autocomplete = m === "login" ? "current-password" : "new-password";
+    $("err").textContent = "";
+  }
+  $("tabLogin").onclick = function () { setMode("login"); };
+  $("tabReg").onclick = function () { setMode("register"); };
+
+  async function submit() {
+    $("err").textContent = "";
+    $("go").disabled = true;
+    var body = { username: $("u").value.trim(), password: $("p").value };
+    if (mode === "register") body.inviteCode = $("c").value.trim();
+    try {
+      var res = await fetch("/api/auth/" + mode, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify(body)
+      });
+      var data = await res.json().catch(function () { return {}; });
+      if (res.ok) { window.location.href = "/"; return; }
+      $("err").textContent = data.error || "صار خطأ، جرّب مرة ثانية";
+    } catch (e) {
+      $("err").textContent = "ما اكدر اتصل بالسيرفر";
+    }
+    $("go").disabled = false;
+  }
+  $("go").onclick = submit;
+  document.addEventListener("keydown", function (e) { if (e.key === "Enter") submit(); });
+</script>
+</body>
+</html>

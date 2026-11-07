@@ -1,3 +1,5 @@
+import express from "express";
+import { mountCloud, llmLimiter } from "../cloud/index.js";
 import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as http from "node:http";
@@ -12,8 +14,8 @@ import { runAgentLoop } from "../agent/loop";
 import { loadConfig } from "../agent/config";
 import type { ConfirmFn } from "../agent/confirmation";
 
-const PORT = 4747;
-const HOST = "127.0.0.1"; // this computer only
+const PORT = Number(process.env.PORT) || 4747;
+const HOST = process.env.PORT ? "0.0.0.0" : "127.0.0.1"; // محلي على جهازك، ومفتوح بس على السحابة
 // Extra host names the page may be opened from (for example your Tailscale name).
 // Set them in .env:  ANZU_ALLOWED_HOSTS=my-pc.tailxxxx.ts.net
 function extraHosts(): string[] {
@@ -334,16 +336,26 @@ function handle(req: http.IncomingMessage, res: http.ServerResponse): void {
     send(res, 500, "text/plain", "Could not read the page file");
   }
 }
-
 export const webModule: Module = {
   name: "web",
   init: () => {
-    const server = http.createServer(handle);
+    const app = express();
+    mountCloud(app);
+
+    // طلب الـ LLM: غيّر الاسم إذا مساره عندك مختلف
+    app.use(["/api/ask", "/api/chat"], llmLimiter);
+
+    // أي شي ثاني يروح لدالتك القديمة مثل ما كان
+    app.use((req, res) => handle(req, res));
+
+    const server = http.createServer(app);
     server.on("error", () => {
       console.log(`Note: the web page could not start (port ${PORT} is busy). Everything else works.`);
     });
     server.listen(PORT, HOST);
-    (server as unknown as { unref?: () => void }).unref?.();
+    if (!process.env.ANZU_HEADLESS) {
+      (server as unknown as { unref?: () => void }).unref?.();
+    }
     return [];
   },
   commands: [
