@@ -232,13 +232,26 @@
     if (!LABELS[st]) st = 'idle';
     S.status = st;
     if (!S.root) return;
-    var el = S.root.querySelector('.anzu-status');
-    if (el) { el.dataset.state = st; el.querySelector('span').textContent = LABELS[st]; }
+    document.querySelectorAll('.anzu-status').forEach(function (el) {
+      el.dataset.state = st;
+      el.querySelector('span').textContent = LABELS[st];
+    });
     if (st === 'thinking' || st === 'think' || st === 'working') S.root.dataset.busy = '1'; else delete S.root.dataset.busy;
   }
 
+  var lastRoute = null;
+  function playEnter() {
+    var app = document.querySelector('.app');
+    if (!app) return;
+    app.classList.remove('anzu-enter');
+    void app.offsetWidth;                       /* restart the animation */
+    app.classList.add('anzu-enter');
+    setTimeout(function () { app.classList.remove('anzu-enter'); }, 1000);
+  }
   function setActive(id) {
     if (id === 'anzu') id = 'chat';          /* the page calls the chat route "anzu" */
+    if (lastRoute !== null && id !== lastRoute && id !== 'home') playEnter();
+    lastRoute = id;
     S.section = id;
     document.querySelectorAll('.anzu-side-item').forEach(function (b) {
       if (b.dataset.id === id) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
@@ -362,6 +375,15 @@
       root.appendChild(st);
     }
 
+    if (S.cfg.shell && !document.querySelector('.anzu-shellbar')) {
+      var bar = document.createElement('div');
+      bar.className = 'anzu-shellbar';
+      bar.innerHTML = '<div class="anzu-shellbar-brand">A.N.Z.U</div><div class="anzu-mini"></div>' +
+        '<div class="anzu-status anzu-status--bar" data-state="' + S.status + '" role="status"><i></i><span>' + LABELS[S.status] + '</span></div>';
+      if (global.ANZU_RAVEN_SVG) bar.querySelector('.anzu-mini').innerHTML = global.ANZU_RAVEN_SVG;
+      document.body.appendChild(bar);
+    }
+
     if ((S.cfg.shell || S.cfg.sidebar !== false) && !document.querySelector('.anzu-side')) {
       var ICON = function (p) {
         return '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
@@ -395,7 +417,18 @@
         }
         var id = b.dataset.id;
         /* shell mode: the sidebar opens the REAL pages (the page decides how) */
-        if (S.cfg.shell && S.cfg.onNavigate) { S.cfg.onNavigate(id); return; }
+        if (S.cfg.shell && S.cfg.onNavigate) {
+          var app = document.querySelector('.app');
+          var leave = function () { if (app) app.classList.remove('anzu-leave'); S.cfg.onNavigate(id); };
+          var target = id === 'anzu' ? 'chat' : id;
+          if (app && app.offsetParent && lastRoute !== null && target !== lastRoute) {
+            app.classList.add('anzu-leave');
+            setTimeout(leave, 170);
+          } else {
+            leave();
+          }
+          return;
+        }
         go(id === 'tasks' ? { section: 'tasks', period: 'all' } : { section: id });
       });
       document.documentElement.dataset.anzuSideOpen = nav.dataset.open;

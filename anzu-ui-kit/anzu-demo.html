@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ANZU — demo</title>
+  <link rel="stylesheet" href="anzu-theme.css" />
+  <style>html, body { margin: 0; background: #070403; }</style>
+</head>
+<body>
+
+  <!-- 1) Home root -->
+  <main id="home-view" class="anzu-home">
+
+    <!-- Top bar (your app already has these: badges, brand, clock) -->
+    <div class="anzu-top">
+      <div class="anzu-badges"><span>LOCAL</span><span>V1.0</span><span>● ONLINE</span></div>
+      <div class="anzu-brand">A.N.Z.U</div>
+      <div class="anzu-clock"><b id="clock">12:29 م</b><small id="date"></small></div>
+    </div>
+
+    <!-- 2) Raven wrapper (empty: anzu-raven.js provides the layered SVG) -->
+    <div data-anzu-raven></div>   <!-- the vector raven is injected here by anzu-ui.js -->
+
+    <!-- 3) Greeting -->
+    <div data-anzu-greeting>
+      <h1 class="anzu-greeting-title">مساء الخير، عبدالرحمن</h1>
+      <p class="anzu-greeting-sub">وصلت. قل، وبلا لفّ.</p>
+      <span class="anzu-name">عبود</span>
+    </div>
+
+    <!-- 4) Command bar: the input carries data-anzu-command -->
+    <div class="anzu-bar">
+      <button class="anzu-mic" type="button" aria-label="الصوت">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="6" y="2" width="4" height="8" rx="2"/><path d="M3.5 8a4.5 4.5 0 0 0 9 0M8 12.5V15"/></svg>
+      </button>
+      <input data-anzu-command type="text" placeholder="اكتب أو احچي...  مثال: شعندي مهام هذا الشهر" />
+    </div>
+
+  </main>
+
+  <script src="anzu-raven.js"></script>
+  <script src="anzu-ui.js"></script>
+  <script>
+    function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+    function day(offset) { var d = new Date(); d.setDate(d.getDate() + offset); return d.toISOString(); }
+
+    AnzuUI.init({
+      root: '#home-view',
+      data: {
+        tasks: async function () {
+          await wait(900);
+          return [
+            { title: 'اكمال التصميم', done: false, due: day(3) },
+            { title: 'اختبار الذكاء', done: false, due: day(6) },
+            { title: 'تصوير فيديو شوي معرفة', done: false, due: day(1) },
+            { title: 'تجربة', done: true, due: day(-2) },
+            { title: 'مراجعة طلبات Nova Wear', done: false, due: null }
+          ];
+        },
+        habits: async function () {
+          return [
+            { title: 'شرب الماء', streak: 4, doneToday: true },
+            { title: 'تحسين انزو', streak: 0, doneToday: false },
+            { title: 'قراءة', streak: 2, doneToday: false }
+          ];
+        },
+        goals: async function () {
+          return [
+            { title: 'Learn TypeScript', progress: 35 },
+            { title: 'إطلاق قناة شوي معرفة', progress: 60 }
+          ];
+        }
+      },
+      onNavigate: function (where) { console.log('navigate:', where); },
+      onUnknown: function (text) { console.log('send to chat:', text); }
+    });
+
+    /* demo-only: the mic button walks through the status words so you can preview them */
+    document.querySelector('.anzu-mic').addEventListener('click', async function () {
+      AnzuUI.setStatus('listening'); await wait(1800);
+      AnzuUI.setStatus('thinking');  await wait(1800);
+      AnzuUI.setStatus('working');   await wait(1800);
+      AnzuUI.setStatus('speaking');  await wait(2200);
+      AnzuUI.setStatus('idle');
+    });
+
+    /* demo-only clock */
+    function tick() {
+      var n = new Date();
+      document.getElementById('clock').textContent = n.toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('date').textContent = n.toLocaleDateString('ar-IQ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    }
+    tick(); setInterval(tick, 30000);
+  </script>
+</body>
+</html>

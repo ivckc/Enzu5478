@@ -14,6 +14,23 @@ import type { ConfirmFn } from "../agent/confirmation";
 
 const PORT = 4747;
 const HOST = "127.0.0.1"; // this computer only
+// Extra host names the page may be opened from (for example your Tailscale name).
+// Set them in .env:  ANZU_ALLOWED_HOSTS=my-pc.tailxxxx.ts.net
+function extraHosts(): string[] {
+  return (process.env.ANZU_ALLOWED_HOSTS ?? "")
+    .split(",")
+    .map((h) => h.trim().toLowerCase())
+    .filter((h) => h !== "");
+}
+function hostAllowed(host: string): boolean {
+  const h = host.toLowerCase();
+  return h === `localhost:${PORT}` || h === `${HOST}:${PORT}` || extraHosts().includes(h);
+}
+function originAllowed(origin: string | undefined): boolean {
+  if (origin === undefined) return false;
+  const o = origin.toLowerCase();
+  return o === `http://localhost:${PORT}` || o === `http://${HOST}:${PORT}` || extraHosts().some((h) => o === `https://${h}`);
+}
 const FILES: Record<string, string> = { "/": "index.html",
   "/raven.svg": "raven.svg",
   "/anzu-theme.css": "anzu-theme.css",
@@ -79,7 +96,7 @@ function answer(res: http.ServerResponse, outcome: Outcome): void {
 
 function handleCommand(req: http.IncomingMessage, res: http.ServerResponse): void {
   const origin = req.headers.origin;
-  if (origin !== `http://localhost:${PORT}` && origin !== `http://${HOST}:${PORT}`) {
+  if (!originAllowed(origin)) {
     return json(res, 403, { ok: false, lines: ["Forbidden"] });
   }
   if (req.headers["x-anzu-token"] !== TOKEN) {
@@ -204,7 +221,7 @@ async function settleTurn(res: http.ServerResponse, turn: AgentTurn): Promise<vo
 
 function handleAgent(req: http.IncomingMessage, res: http.ServerResponse): void {
   const origin = req.headers.origin;
-  if (origin !== `http://localhost:${PORT}` && origin !== `http://${HOST}:${PORT}`) {
+  if (!originAllowed(origin)) {
     return json(res, 403, { ok: false, lines: ["Forbidden"] });
   }
   if (req.headers["x-anzu-token"] !== TOKEN) {
@@ -272,7 +289,7 @@ function handleAgent(req: http.IncomingMessage, res: http.ServerResponse): void 
 function handle(req: http.IncomingMessage, res: http.ServerResponse): void {
   // Only this computer: blocks other sites that try to talk to Anzu.
   const host = req.headers.host ?? "";
-  if (host !== `localhost:${PORT}` && host !== `${HOST}:${PORT}`) {
+  if (!hostAllowed(host)) {
     return send(res, 403, "text/plain", "Forbidden");
   }
   const url = (req.url ?? "/").split("?")[0];

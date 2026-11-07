@@ -799,3 +799,90 @@ html[data-anzu-card="tech"] .app > .box {
   .app > .box { overflow: visible; }
 }
 
+
+
+/* ---------- 13. App shell top bar (free raven + status word) and page transitions ---------- */
+/* To make the raven bigger or smaller on the inner pages, change these two numbers. */
+:root { --a-bar-h: 138px; --a-mini: 118px; }
+.anzu-shellbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--a-bar-h);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 28px;
+  z-index: 40;
+  pointer-events: none;
+  animation: anzu-fade 0.6s var(--a-ease);
+}
+body.home .anzu-shellbar { display: none; }
+.anzu-shellbar-brand {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--a-font-title);
+  font-size: 22px;
+  letter-spacing: 10px;
+  color: var(--a-accent-2);
+  white-space: nowrap;
+}
+.anzu-mini { position: relative; width: var(--a-mini); height: var(--a-mini); display: grid; place-items: center; flex: none; }
+.anzu-mini::before {
+  content: '';
+  position: absolute;
+  inset: -9%;
+  border: 1px dotted var(--a-line-strong);
+  border-radius: 50%;
+  animation: anzu-spin 90s linear infinite;
+}
+.anzu-mini::after {
+  content: '';
+  position: absolute;
+  inset: -4%;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  border-top-color: var(--a-gold);
+  border-bottom-color: var(--a-gold);
+  animation: anzu-spin 22s linear infinite;
+}
+.anzu-mini svg {
+  width: 82%;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 0 8px var(--a-raven-glow));
+  animation: anzu-float 7s ease-in-out infinite;
+}
+.anzu-status.anzu-status--bar {
+  position: static;
+  transform: none;
+  width: auto;
+  min-width: 88px;
+  padding: 4px 14px;
+}
+
+/* the old mascot column is gone: the page is two cards and the raven lives in the top bar */
+html[data-anzu-shell] .app { padding-top: calc(var(--a-bar-h) + 6px); grid-template-columns: 1fr 300px; }
+html[data-anzu-shell] .app > aside:first-child { display: none; }
+.anzu-side[data-shell] { top: calc(var(--a-bar-h) + 6px); }
+body.home .anzu-side[data-shell] { top: 120px; }
+
+/* page transitions: soft fade-out on leaving, cards slide in on arriving */
+.app.anzu-leave > .box { opacity: 0; transform: translateY(8px); transition: opacity 0.16s ease, transform 0.16s ease; }
+.app.anzu-enter > .box { animation: anzu-page-in 0.55s var(--a-ease) both; }
+.app.anzu-enter > .box:nth-child(2) { animation-delay: 0.04s; }
+.app.anzu-enter > .box:nth-child(3) { animation-delay: 0.1s; }
+.anzu-home { animation: anzu-fade 0.6s var(--a-ease); }
+@keyframes anzu-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes anzu-page-in { from { opacity: 0; transform: translateY(16px) scale(0.99); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 900px) {
+  html[data-anzu-shell] .app { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app.anzu-enter > .box, .anzu-home, .anzu-shellbar, .anzu-mini::before, .anzu-mini::after, .anzu-mini svg { animation: none !important; }
+  .app.anzu-leave > .box { transition: none; }
+}

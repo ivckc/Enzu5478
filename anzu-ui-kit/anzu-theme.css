@@ -1,0 +1,888 @@
+/* ==========================================================================
+   ANZU theme  —  tokens + card styles + home-screen motion
+   Card styles : html[data-anzu-card="feather" | "tech"]
+   Color themes: html[data-anzu-theme="copper" | "crimson" | "blue"]
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@300;400;500;700&display=swap');
+
+/* ---------- 1. Tokens ---------- */
+:root {
+  --a-bg: #070403;
+  --a-card: #0e0806;
+  --a-line: #2b150d;
+  --a-line-strong: #7a3f26;
+  --a-accent: #c1613a;
+  --a-accent-2: #e8a98a;
+  --a-gold: #d9b777; /* color of the two rotating arcs */
+  --a-text: #f3e7dc;
+  --a-muted: #9a8272;
+  --a-glow: rgba(193, 97, 58, 0.14);
+  --a-bg-1: #060302;
+  --a-bg-2: #0b0504;
+  --a-bg-3: #1a0d08;
+  --a-ring-faint: rgba(193, 97, 58, 0.14);
+  --a-raven-glow: rgba(232, 169, 138, 0.35);
+  --a-bar-bg: rgba(20, 10, 7, 0.85);
+  --a-mic: #241109;
+  --a-mic-hover: #3a1b0f;
+  --a-on-accent: #140a06;
+  /* raven colors */
+  --rv-fill: #e8a98a;
+  --rv-line: #1a0b06;
+  --rv-eye: #ff5a45;
+
+  --a-font-title: 'Amiri', 'Noto Naskh Arabic', serif;
+  --a-font-body: 'Tajawal', system-ui, sans-serif;
+  --a-font-mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+  --a-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --a-dur: 0.7s;
+  --a-cut: 26px;
+}
+
+:root[data-anzu-theme="crimson"] {            /* 2. red + black */
+  --a-bg: #050304;
+  --a-card: #0d0607;
+  --a-line: #2a1014;
+  --a-line-strong: #7a1f26;
+  --a-accent: #e5333b;
+  --a-accent-2: #ff7a80;
+  --a-gold: #ff7a80;
+  --a-text: #f6e9e7;
+  --a-muted: #9d8280;
+  --a-glow: rgba(229, 51, 59, 0.14);
+  --a-bg-1: #040203;
+  --a-bg-2: #0a0405;
+  --a-bg-3: #1a0709;
+  --a-ring-faint: rgba(229, 51, 59, 0.18);
+  --a-raven-glow: rgba(229, 51, 59, 0.40);
+  --a-bar-bg: rgba(16, 6, 8, 0.88);
+  --a-mic: #1a0d14;
+  --a-mic-hover: #2c1320;
+  --a-on-accent: #0d0304;
+  --rv-fill: #d9363f;
+  --rv-line: #08080d;
+  --rv-eye: #ffd9d2;
+}
+
+:root[data-anzu-theme="blue"] {                /* 3. blue */
+  --a-bg: #04070d;
+  --a-card: #080d16;
+  --a-line: #14213a;
+  --a-line-strong: #2d5aa8;
+  --a-accent: #4f8cff;
+  --a-accent-2: #9cc4ff;
+  --a-gold: #7fd8ff;
+  --a-text: #eaf1fb;
+  --a-muted: #7d8fab;
+  --a-glow: rgba(79, 140, 255, 0.14);
+  --a-bg-1: #03060b;
+  --a-bg-2: #050a13;
+  --a-bg-3: #0a1830;
+  --a-ring-faint: rgba(79, 140, 255, 0.18);
+  --a-raven-glow: rgba(127, 190, 255, 0.40);
+  --a-bar-bg: rgba(6, 12, 22, 0.88);
+  --a-mic: #0d1b33;
+  --a-mic-hover: #14294d;
+  --a-on-accent: #04101f;
+  --rv-fill: #8fb8f0;
+  --rv-line: #06101f;
+  --rv-eye: #e6f6ff;
+}
+
+/* ---------- 2. Home screen layout ---------- */
+.anzu-home {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  direction: rtl;
+  color: var(--a-text);
+  font-family: var(--a-font-body);
+  background:
+    radial-gradient(ellipse at 50% 46%, var(--a-glow), transparent 62%),
+    linear-gradient(180deg, var(--a-bg-1) 0%, var(--a-bg-2) 55%, var(--a-bg-3) 100%);
+}
+/* big faint ellipse behind the raven (like the real ANZU home) */
+.anzu-home::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 520px;
+  height: 700px;
+  border: 1px solid var(--a-ring-faint);
+  border-radius: 50%;
+  transform: translate(-50%, -57%);
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+.anzu-home[data-mode="focus"]::before { opacity: 0; }
+
+/* Raven: centered in "home", small in the top-right corner in "focus" */
+.anzu-home [data-anzu-raven] {
+  position: absolute;
+  top: 50%;
+  right: 50%;
+  width: 240px;
+  height: 240px;
+  display: grid;
+  place-items: center;
+  transform: translate(50%, -62%) scale(1);
+  transform-origin: top right;
+  transition:
+    top var(--a-dur) var(--a-ease),
+    right var(--a-dur) var(--a-ease),
+    transform var(--a-dur) var(--a-ease);
+  will-change: transform, top, right;
+  z-index: 3;
+}
+.anzu-home[data-mode="focus"] [data-anzu-raven] {
+  top: 46px;
+  right: 48px;
+  transform: translate(0, 0) scale(0.5);
+}
+.anzu-home [data-anzu-raven] > * {
+  width: 88%;
+  height: auto;
+  animation: anzu-float 7s ease-in-out infinite;
+  filter: drop-shadow(0 0 14px var(--a-raven-glow));
+  scale: 1 1;
+  transition: scale var(--a-dur) var(--a-ease);
+}
+/* rotating rings around the raven */
+.anzu-home [data-anzu-raven]::before {
+  content: '';
+  position: absolute;
+  inset: -14%;
+  border: 1px dotted var(--a-line-strong);
+  border-radius: 50%;
+  animation: anzu-spin 90s linear infinite;
+}
+.anzu-home [data-anzu-raven]::after {
+  content: '';
+  position: absolute;
+  inset: -6%;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--a-gold);
+  border-bottom-color: var(--a-gold);
+  animation: anzu-spin 22s linear infinite;
+}
+/* thinking state */
+.anzu-home[data-busy="1"] [data-anzu-raven]::after { animation-duration: 2.2s; }
+
+/* Greeting fades away when a card opens */
+.anzu-home [data-anzu-greeting] {
+  position: absolute;
+  top: calc(50% + 176px);
+  left: 0;
+  right: 0;
+  text-align: center;
+  transition: opacity 0.35s ease, transform 0.5s var(--a-ease);
+}
+.anzu-home[data-mode="focus"] [data-anzu-greeting] {
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+}
+.anzu-greeting-title {
+  font-family: var(--a-font-title);
+  font-size: clamp(26px, 4vw, 38px);
+  font-weight: 700;
+  margin: 0;
+}
+.anzu-greeting-sub { color: var(--a-muted); margin: 6px 0 0; font-size: 15px; }
+
+/* Raven vector layers: colors follow the theme (--rv-fill / --rv-line / --rv-eye) */
+.anzu-rv .rv-body path,
+.anzu-rv .rv-wing-front path,
+.anzu-rv .rv-head path { fill: var(--rv-fill); }
+.anzu-rv .rv-wing-back path { fill: color-mix(in srgb, var(--rv-fill) 90%, #000); }
+.anzu-rv .rv-beak-upper path:first-child { fill: color-mix(in srgb, var(--rv-fill) 88%, #000); }
+.anzu-rv .rv-beak-lower path:first-child { fill: color-mix(in srgb, var(--rv-fill) 80%, #000); }
+.anzu-rv .rv-beak-upper path[fill="none"],
+.anzu-rv .rv-beak-lower path[fill="none"] { stroke: var(--rv-line); }
+.anzu-rv .rv-eyes > path { fill: var(--rv-line); }
+.anzu-rv .rv-eyes > ellipse { fill: var(--rv-eye); }
+.anzu-rv .rv-line-art { fill: var(--rv-line); }
+
+/* ---------- 3. Cards area ---------- */
+.anzu-cards {
+  position: absolute;
+  top: 176px;
+  bottom: 120px;
+  left: 200px;
+  right: 200px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(12px);
+  transition: opacity 0.3s ease, transform 0.5s var(--a-ease);
+}
+.anzu-cards.is-in { opacity: 1; pointer-events: auto; transform: none; }
+.anzu-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: minmax(0, 1fr);
+  max-width: 980px;
+  height: 100%;
+  margin: 0 auto;
+}
+
+/* ---------- 4. Card: shared parts ---------- */
+.acard-wrap {
+  opacity: 0;
+  transform: translateY(16px) scale(0.985);
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  min-height: min(100%, 440px);
+  max-height: 100%;
+}
+.anzu-cards.is-in .acard-wrap {
+  animation: anzu-card-in 0.7s var(--a-ease) forwards;
+  animation-delay: calc(var(--i, 0) * 90ms + 120ms);
+}
+.acard { position: relative; background: var(--a-line-strong); flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.acard-in {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--a-card);
+  padding: 28px 32px 18px;
+}
+.acard-label {
+  display: block;
+  direction: ltr;
+  text-align: right;
+  margin-bottom: 8px;
+  font: 500 10px var(--a-font-mono);
+  letter-spacing: 3px;
+  color: var(--a-accent);
+}
+.acard-titlebar { display: flex; align-items: baseline; gap: 12px; }
+.acard-num {
+  font-family: var(--a-font-title);
+  font-size: 58px;
+  line-height: 1;
+  color: var(--a-accent-2);
+}
+.acard-title {
+  margin: 0;
+  font-family: var(--a-font-title);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--a-text);
+}
+.acard-sub { margin: 6px 0 14px; font-size: 12px; color: var(--a-muted); }
+.acard-bar { position: relative; height: 1px; background: var(--a-line); margin-bottom: 6px; }
+.acard-bar i {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 100%;
+  background: var(--a-accent);
+  transform: scaleX(var(--p, 0));
+  transform-origin: right;
+}
+.anzu-cards.is-in .acard-bar i {
+  animation: anzu-grow 1.1s var(--a-ease) both;
+  animation-delay: calc(var(--i, 0) * 90ms + 450ms);
+}
+.acard-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-inline-end: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--a-line-strong) transparent;
+}
+.acard-rows { list-style: none; margin: 0; padding: 0; }
+.acard-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--a-line);
+  font-size: 16px;
+  opacity: 0;
+  transform: translateX(10px);
+}
+.acard-row:first-child { border-top: 0; }
+.anzu-cards.is-in .acard-row {
+  animation: anzu-row-in 0.5s var(--a-ease) forwards;
+  animation-delay: calc(var(--i, 0) * 90ms + 260ms + var(--r, 0) * 55ms);
+}
+.acard-check {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  border: 1px solid var(--a-accent);
+  border-radius: 50%;
+  transition: background 0.25s ease, box-shadow 0.25s ease;
+}
+.acard-row:hover .acard-check { box-shadow: 0 0 0 3px var(--a-glow); }
+.acard-row[data-done="1"] .acard-check { background: var(--a-accent); }
+.acard-row[data-done="1"] .acard-text { color: var(--a-muted); text-decoration: line-through; }
+.acard-meta {
+  margin-inline-start: auto;
+  font: 400 11px var(--a-font-mono);
+  color: var(--a-muted);
+}
+.acard-sep {
+  list-style: none;
+  margin-top: 10px;
+  padding: 16px 0 6px;
+  border-top: 1px solid var(--a-line);
+  font: 500 10px var(--a-font-mono);
+  letter-spacing: 3px;
+  color: var(--a-accent);
+}
+:root[data-anzu-card="tech"] .acard-sep { border-top-style: dashed; }
+.acard-empty { padding: 16px 0 10px; font-size: 13px; color: var(--a-muted); }
+
+/* ---------- 5. Card style A: FEATHER EDGE ---------- */
+:root[data-anzu-card="feather"] .acard,
+:root[data-anzu-card="feather"] .acard-in {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--a-cut)) 0,
+    100% var(--a-cut),
+    100% 100%,
+    var(--a-cut) 100%,
+    0 calc(100% - var(--a-cut))
+  );
+}
+:root[data-anzu-card="feather"] .acard { padding: 1px; }
+:root[data-anzu-card="feather"] .acard-in { box-sizing: border-box; }
+
+/* ---------- 6. Card style B: TECH (dashed HUD) ---------- */
+:root[data-anzu-card="tech"] .acard {
+  background: transparent;
+  border: 1px dashed var(--a-line-strong);
+}
+:root[data-anzu-card="tech"] .acard-in { background: rgba(255, 255, 255, 0.012); }
+:root[data-anzu-card="tech"] .acard::before,
+:root[data-anzu-card="tech"] .acard::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+}
+:root[data-anzu-card="tech"] .acard::before {
+  top: -1px; right: -1px;
+  border-top: 2px solid var(--a-accent);
+  border-right: 2px solid var(--a-accent);
+}
+:root[data-anzu-card="tech"] .acard::after {
+  bottom: -1px; left: -1px;
+  border-bottom: 2px solid var(--a-accent);
+  border-left: 2px solid var(--a-accent);
+}
+:root[data-anzu-card="tech"] .acard-label::after {
+  content: '_';
+  margin-left: 4px;
+  animation: anzu-blink 1.1s steps(2) infinite;
+}
+:root[data-anzu-card="tech"] .acard-check { border-radius: 0; }
+:root[data-anzu-card="tech"] .acard-row { border-top-style: dashed; }
+:root[data-anzu-card="tech"] .acard-bar { background: transparent; border-top: 1px dashed var(--a-line-strong); height: 0; }
+:root[data-anzu-card="tech"] .acard-bar i { top: -2px; height: 3px; }
+
+/* ---------- 7. Controls: back, chips, command bar, appearance ---------- */
+.anzu-back {
+  position: absolute;
+  top: 64px;
+  left: 24px;
+  z-index: 4;
+  padding: 6px 14px;
+  font: 500 12px var(--a-font-body);
+  color: var(--a-accent-2);
+  background: transparent;
+  border: 1px solid var(--a-line-strong);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, border-color 0.2s ease;
+}
+.anzu-home[data-mode="focus"] .anzu-back { opacity: 1; pointer-events: auto; }
+.anzu-back:hover { border-color: var(--a-accent); }
+
+
+.anzu-bar {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(700px, calc(100% - 32px));
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  padding: 8px 14px;
+  background: var(--a-bar-bg);
+  border: 1px solid var(--a-line-strong);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.anzu-bar:focus-within { border-color: var(--a-accent); box-shadow: 0 0 0 3px var(--a-glow); }
+.anzu-bar input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 4px;
+  font: 400 15px var(--a-font-body);
+  color: var(--a-text);
+  background: transparent;
+  border: 0;
+  outline: none;
+}
+.anzu-bar input::placeholder { color: var(--a-muted); }
+.anzu-bar input:focus-visible { outline: none; }
+.anzu-mic {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  color: var(--a-accent-2);
+  background: var(--a-mic);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.anzu-mic:hover { background: var(--a-mic-hover); transform: scale(1.06); }
+.anzu-mic svg { width: 16px; height: 16px; }
+
+[data-anzu-appearance] { display: grid; gap: 26px; padding: 8px 0 4px; }
+.anzu-seg { display: grid; gap: 12px; }
+.anzu-seg > span { font: 500 13px var(--a-font-body); color: var(--a-text); }
+.anzu-seg .opts { display: flex; flex-wrap: wrap; gap: 10px; }
+.anzu-seg button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  font: 400 14px var(--a-font-body);
+  color: var(--a-muted);
+  background: transparent;
+  border: 1px solid var(--a-line);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+.anzu-seg button:hover { color: var(--a-accent-2); border-color: var(--a-line-strong); }
+.anzu-seg button i { width: 12px; height: 12px; border-radius: 50%; }
+.anzu-seg button[aria-pressed="true"] { color: var(--a-text); border-color: var(--a-accent); background: var(--a-glow); }
+
+.anzu-home button:focus-visible,
+.anzu-home input:focus-visible { outline: 2px solid var(--a-accent-2); outline-offset: 2px; }
+
+/* ---------- 7b. Top bar, name chip, grid button ---------- */
+.anzu-top {
+  position: absolute;
+  top: 22px;
+  left: 24px;
+  right: 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  direction: ltr;
+  z-index: 2;
+  pointer-events: none;
+}
+.anzu-badges { display: flex; gap: 8px; }
+.anzu-badges span {
+  padding: 3px 9px;
+  font: 400 10px var(--a-font-mono);
+  letter-spacing: 2px;
+  color: var(--a-accent);
+  border: 1px solid var(--a-line-strong);
+}
+.anzu-brand {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  transform: translateX(-50%);
+  font-family: var(--a-font-title);
+  font-size: 22px;
+  letter-spacing: 10px;
+  color: var(--a-accent-2);
+  transition: opacity 0.4s ease;
+}
+.anzu-clock { text-align: right; direction: rtl; }
+.anzu-clock b { display: block; font: 400 26px var(--a-font-body); color: var(--a-text); }
+.anzu-clock small { font: 400 12px var(--a-font-body); color: var(--a-muted); }
+.anzu-home[data-mode="focus"] .anzu-top .anzu-clock { opacity: 0.0; }
+
+.anzu-name {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 3px 14px;
+  font: 400 12px var(--a-font-body);
+  color: var(--a-accent-2);
+  border: 1px solid var(--a-line-strong);
+}
+
+/* ---------- 7c. Status word under the raven ---------- */
+.anzu-status {
+  position: absolute;
+  top: calc(50% + 134px);
+  left: 50%;
+  width: 96px;
+  transform: translateX(-50%);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px 0;
+  font: 500 12px var(--a-font-body);
+  color: var(--a-accent-2);
+  background: var(--a-bar-bg);
+  border: 1px solid var(--a-line-strong);
+  white-space: nowrap;
+  z-index: 3;
+  transition:
+    top var(--a-dur) var(--a-ease),
+    left var(--a-dur) var(--a-ease),
+    transform var(--a-dur) var(--a-ease),
+    border-color 0.3s ease;
+}
+.anzu-home[data-mode="focus"] .anzu-status {
+  top: 196px;
+  left: calc(100% - 48px - 120px + 12px);
+  transform: none;
+}
+.anzu-status i { width: 7px; height: 7px; border-radius: 50%; background: var(--a-accent); }
+.anzu-status[data-state="idle"] i { opacity: 0.45; }
+.anzu-status[data-state="listening"] i { animation: anzu-pulse 1.2s ease-in-out infinite; }
+.anzu-status[data-state="thinking"] i { animation: anzu-pulse 0.7s ease-in-out infinite; }
+.anzu-status[data-state="working"] i { animation: anzu-blink 0.5s steps(2) infinite; }
+.anzu-status[data-state="speaking"] i { animation: anzu-pulse 0.45s ease-in-out infinite; background: var(--a-accent-2); }
+.anzu-status[data-state="error"] { color: #ff6b6b; border-color: #a33; }
+.anzu-status[data-state="error"] i { background: #ff4b4b; }
+.anzu-status[data-state="think"] i { animation: anzu-pulse 0.7s ease-in-out infinite; }
+.anzu-status[data-state="alert"] { color: #ffd37a; border-color: #b8862b; }
+.anzu-status[data-state="alert"] i { background: #ffc04d; animation: anzu-pulse 0.45s ease-in-out infinite; }
+.anzu-status[data-state="ok"] i { background: #7fc79a; }
+.anzu-status[data-state="off"],
+.anzu-status[data-state="net"] { color: #ff6b6b; border-color: #a33; }
+.anzu-status[data-state="off"] i,
+.anzu-status[data-state="net"] i { background: #ff4b4b; }
+.anzu-status[data-state="sleep"] { opacity: 0.6; }
+
+/* ---------- 7d. Sidebar (sections backup for voice / chat) ---------- */
+.anzu-side {
+  position: absolute;
+  left: 20px;
+  top: 120px;
+  bottom: 120px;
+  width: 48px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 6px;
+  overflow: hidden;
+  background: var(--a-bar-bg);
+  border: 1px solid var(--a-line);
+  opacity: 0.65;
+  z-index: 5;
+  transition: width 0.45s var(--a-ease), opacity 0.3s ease, border-color 0.3s ease;
+}
+.anzu-side:hover,
+.anzu-side[data-open="1"] { opacity: 1; }
+.anzu-side[data-open="1"] { width: 176px; border-color: var(--a-line-strong); }
+.anzu-side-toggle,
+.anzu-side-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 38px;
+  padding: 0 9px;
+  flex: none;
+  color: var(--a-muted);
+  background: transparent;
+  border: 0;
+  border-inline-start: 2px solid transparent;
+  cursor: pointer;
+  font: 400 14px var(--a-font-body);
+  white-space: nowrap;
+  text-align: right;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+.anzu-side-toggle { margin-bottom: 8px; border-bottom: 1px solid var(--a-line); }
+.anzu-side svg { flex: none; width: 18px; height: 18px; }
+.anzu-side-item span { opacity: 0; transition: opacity 0.25s ease; }
+.anzu-side[data-open="1"] .anzu-side-item span { opacity: 1; }
+.anzu-side-item[data-end] { margin-top: auto; }
+.anzu-side-toggle:hover,
+.anzu-side-item:hover { color: var(--a-accent-2); }
+.anzu-side-item[aria-current="true"] {
+  color: var(--a-accent-2);
+  background: var(--a-glow);
+  border-inline-start-color: var(--a-accent);
+}
+
+/* ---------- 7e. App shell: the sidebar on every page ---------- */
+.anzu-side[data-shell] {
+  position: fixed;
+  left: 16px;
+  top: 16px;
+  bottom: 16px;
+  z-index: 50;
+  background: var(--a-card);
+  transition: width 0.45s var(--a-ease), opacity 0.3s ease, border-color 0.3s ease,
+    top 0.45s var(--a-ease), bottom 0.45s var(--a-ease);
+}
+body.home .anzu-side[data-shell] { top: 120px; bottom: 120px; }
+html[data-anzu-shell] .app { padding-left: 84px; transition: padding-left 0.45s var(--a-ease); }
+html[data-anzu-shell][data-anzu-side-open="1"] .app { padding-left: 208px; }
+@media (max-width: 900px) {
+  html[data-anzu-shell] .app { padding-left: 72px; }
+  html[data-anzu-shell][data-anzu-side-open="1"] .app { padding-left: 72px; }
+}
+
+/* ---------- 8. Keyframes ---------- */
+@keyframes anzu-card-in { to { opacity: 1; transform: none; } }
+@keyframes anzu-row-in  { to { opacity: 1; transform: none; } }
+@keyframes anzu-grow    { from { transform: scaleX(0); } }
+@keyframes anzu-spin    { to { transform: rotate(360deg); } }
+@keyframes anzu-float   { 50% { transform: translateY(-5px); } }
+@keyframes anzu-blink   { 50% { opacity: 0; } }
+@keyframes anzu-pulse   { 0%, 100% { transform: scale(0.7); opacity: 0.5; } 50% { transform: scale(1.5); opacity: 1; } }
+
+/* ---------- 9. Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .anzu-home *,
+  .anzu-home *::before,
+  .anzu-home *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- 10. Small screens ---------- */
+@media (max-width: 1100px) {
+  .anzu-cards { left: 84px; right: 24px; top: 210px; }
+}
+@media (max-width: 640px) {
+  .anzu-home [data-anzu-raven] { width: 190px; height: 190px; }
+  .anzu-cards { bottom: 130px; }
+}
+
+/* ---------- 12. Inner pages skin: restyles the EXISTING pages (tasks, habits, goals, chat, settings) ---------- */
+
+/* The old page variables now follow the active theme.
+   (!important also beats the old inline accent colour that the old page sets from JavaScript.) */
+:root {
+  --bg: var(--a-bg) !important;
+  --ln: var(--a-line-strong) !important;
+  --tx: var(--a-text) !important;
+  --mu: var(--a-muted) !important;
+  --ac: var(--a-accent) !important;
+}
+body {
+  font-family: var(--a-font-body);
+  color: var(--a-text);
+  background: linear-gradient(180deg, var(--a-bg-1) 0%, var(--a-bg-2) 55%, var(--a-bg-3) 100%) fixed;
+}
+
+/* typography */
+.app h1 { font-family: var(--a-font-title); font-weight: 700; font-size: 30px; margin: 0 0 16px; }
+.app .cap { font-family: var(--a-font-mono); letter-spacing: 3px; color: var(--a-accent); }
+.app .logo { font-family: var(--a-font-title); color: var(--a-accent-2); }
+
+/* layout: the cards stay in place, only their content scrolls */
+.app { height: 100vh; min-height: 0; gap: 18px; }
+.app > .box {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--a-line-strong) transparent;
+}
+
+/* the cards: feather edge (default) */
+.app > .box {
+  border: 0;
+  border-radius: 0;
+  padding: 24px 26px;
+  background:
+    linear-gradient(to top right, transparent calc(50% - 0.7px), var(--a-line-strong) calc(50% - 0.7px), var(--a-line-strong) calc(50% + 0.7px), transparent calc(50% + 0.7px)) top right / var(--a-cut) var(--a-cut) no-repeat,
+    linear-gradient(to top right, transparent calc(50% - 0.7px), var(--a-line-strong) calc(50% - 0.7px), var(--a-line-strong) calc(50% + 0.7px), transparent calc(50% + 0.7px)) bottom left / var(--a-cut) var(--a-cut) no-repeat,
+    var(--a-card);
+  box-shadow: inset 0 0 0 1px var(--a-line-strong);
+  clip-path: polygon(0 0, calc(100% - var(--a-cut)) 0, 100% var(--a-cut), 100% 100%, var(--a-cut) 100%, 0 calc(100% - var(--a-cut)));
+}
+/* the cards: technical dashed style */
+html[data-anzu-card="tech"] .app > .box {
+  clip-path: none;
+  box-shadow: none;
+  border: 1px dashed var(--a-line-strong);
+  background-origin: border-box;
+  background:
+    linear-gradient(var(--a-accent), var(--a-accent)) top right / 14px 2px no-repeat,
+    linear-gradient(var(--a-accent), var(--a-accent)) top right / 2px 14px no-repeat,
+    linear-gradient(var(--a-accent), var(--a-accent)) bottom left / 14px 2px no-repeat,
+    linear-gradient(var(--a-accent), var(--a-accent)) bottom left / 2px 14px no-repeat,
+    var(--a-card);
+}
+
+/* tabs and chips */
+.app .chip { border-color: var(--a-line-strong); color: var(--a-accent-2); background: transparent; }
+.app .tabs .on, .app .tb.on { background: var(--a-glow); color: var(--a-text); border-color: var(--a-accent); }
+
+/* rows */
+.app .row, .app .tr, .app .hr { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--a-line); }
+.app .tr, .app .hr { transition: border-color 0.2s ease, background 0.2s ease; }
+.app .tr:hover, .app .hr:hover { border-color: var(--a-line-strong); }
+.app .tr.sel, .app .hr.sel { border-color: var(--a-accent); background: var(--a-glow); box-shadow: none; }
+.app .ck { border-color: var(--a-accent); }
+.app .ck.on { background: var(--a-accent); color: var(--a-on-accent); }
+.app .sq { border-color: var(--a-accent); }
+.app .sq.on { background: var(--a-accent); }
+.app .sr { border-bottom-color: var(--a-line); }
+.app .act { border-inline-start-color: var(--a-line-strong); }
+.app .ring { background: conic-gradient(var(--a-accent) calc(var(--p) * 1%), var(--a-line) 0); }
+.app .ring i { background: var(--a-card); font-family: var(--a-font-title); font-size: 26px; }
+.app .bar2 { background: var(--a-line); }
+.app .bar2 i { background: var(--a-accent); }
+
+/* habits */
+.app .hq { background: var(--a-card); border-color: var(--a-line); }
+.app .hq.on { background: var(--a-accent); border-color: var(--a-accent); color: var(--a-on-accent); }
+.app .hq.td { outline-color: var(--a-accent-2); }
+
+/* inputs and buttons */
+.app select, .app button, .app input {
+  background: var(--a-card);
+  color: var(--a-text);
+  border: 1px solid var(--a-line-strong);
+  border-radius: 0;
+  font-family: var(--a-font-body);
+}
+.app button, .app select { transition: border-color 0.2s ease, color 0.2s ease, filter 0.2s ease; }
+.app button:hover, .app select:hover { border-color: var(--a-accent); color: var(--a-accent-2); }
+.app .addb input { border: 1px dashed var(--a-line-strong); }
+.app .addb button, .app .addb button:hover { background: var(--a-accent); color: #fff; border: 0; }
+.app .addb button:hover { filter: brightness(1.12); }
+.app .dng, .app .dng:hover { border-color: #8a4a4a; color: #e58a7a; }
+.app input:focus-visible, .app select:focus-visible, .app button:focus-visible { outline: 2px solid var(--a-accent-2); outline-offset: 1px; }
+
+/* settings controls */
+.app .opt { background: transparent; border-color: var(--a-line-strong); transition: border-color 0.2s ease, background 0.2s ease; }
+.app .opt.on { border-color: var(--a-accent); color: var(--a-accent-2); background: var(--a-glow); }
+.app .tgl { border-color: var(--a-line-strong); }
+.app .tgl.on { border-color: var(--a-accent); }
+.app .tgl i { background: var(--a-muted); }
+.app .tgl.on i { background: var(--a-accent); }
+.app .btn2 { border-color: var(--a-accent); }
+.app .rf { border-color: var(--a-line-strong); }
+
+/* messages, approvals, chat */
+.app .ask, .app .msg, .app .cd { background: rgba(255, 255, 255, 0.02); }
+.app .ask { border-color: var(--a-accent); }
+.app .bu { background: rgba(255, 255, 255, 0.03); border-color: var(--a-line-strong); }
+.app .ba { background: var(--a-card); border-color: var(--a-accent); }
+/* chat page: the message list fills the card, the input stays at the bottom */
+.app > .box:has(.chat) { display: flex; flex-direction: column; overflow: hidden; }
+.app .chat { flex: 1 1 auto; height: auto; min-height: 120px; scrollbar-width: thin; scrollbar-color: var(--a-line-strong) transparent; }
+.vbar { background: var(--a-bar-bg); border-color: var(--a-line-strong); }
+
+@media (max-width: 900px) {
+  .app { height: auto; }
+  .app > .box { overflow: visible; }
+}
+
+
+
+/* ---------- 13. App shell top bar (free raven + status word) and page transitions ---------- */
+/* To make the raven bigger or smaller on the inner pages, change these two numbers. */
+:root { --a-bar-h: 108px; --a-mini: 88px; }
+.anzu-shellbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--a-bar-h);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 28px;
+  z-index: 40;
+  pointer-events: none;
+  animation: anzu-fade 0.6s var(--a-ease);
+}
+body.home .anzu-shellbar { display: none; }
+.anzu-shellbar-brand {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--a-font-title);
+  font-size: 22px;
+  letter-spacing: 10px;
+  color: var(--a-accent-2);
+  white-space: nowrap;
+}
+.anzu-mini { position: relative; width: var(--a-mini); height: var(--a-mini); display: grid; place-items: center; flex: none; }
+.anzu-mini::before {
+  content: '';
+  position: absolute;
+  inset: -9%;
+  border: 1px dotted var(--a-line-strong);
+  border-radius: 50%;
+  animation: anzu-spin 90s linear infinite;
+}
+.anzu-mini::after {
+  content: '';
+  position: absolute;
+  inset: -4%;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  border-top-color: var(--a-gold);
+  border-bottom-color: var(--a-gold);
+  animation: anzu-spin 22s linear infinite;
+}
+.anzu-mini svg {
+  width: 82%;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 0 8px var(--a-raven-glow));
+  animation: anzu-float 7s ease-in-out infinite;
+}
+.anzu-status.anzu-status--bar {
+  position: static;
+  transform: none;
+  width: auto;
+  min-width: 88px;
+  padding: 4px 14px;
+}
+
+/* the old mascot column is gone: the page is two cards and the raven lives in the top bar */
+html[data-anzu-shell] .app { padding-top: calc(var(--a-bar-h) + 6px); grid-template-columns: 1fr 300px; }
+html[data-anzu-shell] .app > aside:first-child { display: none; }
+.anzu-side[data-shell] { top: calc(var(--a-bar-h) + 6px); }
+body.home .anzu-side[data-shell] { top: 120px; }
+
+/* page transitions: soft fade-out on leaving, cards slide in on arriving */
+.app.anzu-leave > .box { opacity: 0; transform: translateY(8px); transition: opacity 0.16s ease, transform 0.16s ease; }
+.app.anzu-enter > .box { animation: anzu-page-in 0.55s var(--a-ease) both; }
+.app.anzu-enter > .box:nth-child(2) { animation-delay: 0.04s; }
+.app.anzu-enter > .box:nth-child(3) { animation-delay: 0.1s; }
+.anzu-home { animation: anzu-fade 0.6s var(--a-ease); }
+@keyframes anzu-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes anzu-page-in { from { opacity: 0; transform: translateY(16px) scale(0.99); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 900px) {
+  html[data-anzu-shell] .app { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app.anzu-enter > .box, .anzu-home, .anzu-shellbar, .anzu-mini::before, .anzu-mini::after, .anzu-mini svg { animation: none !important; }
+  .app.anzu-leave > .box { transition: none; }
+}
