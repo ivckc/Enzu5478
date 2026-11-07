@@ -1,4 +1,11 @@
 // Agent Loop - Orchestrates the AI agent workflow
+// Changes vs. the old version:
+//  1) tools are offered on EVERY iteration (the old one offered them only on the first)
+//  2) ALL tool calls in a reply are executed (the old one ran only the first)
+//  3) the model knows today's date/time (needed for "tomorrow", "Friday"...)
+//  4) optional conversation history (so voice chat has memory)
+//  5) it is told clearly to ACT through tools, not just describe
+//  6) optional voice mode: short spoken-style answers
 
 import { getTool, listTools, registerTool } from './tools/registry';
 import type { Tool } from './tools/types';
@@ -32,6 +39,46 @@ type ToolCall = {
   };
 };
 
+export type AgentMessage = Record<string, unknown>;
+
+export type AgentOptions = {
+  /** Past turns (plain user/assistant text). The loop appends the new turn to it. */
+  history?: AgentMessage[];
+  /** true = the answer will be read aloud, so keep it short and plain. */
+  voice?: boolean;
+};
+
+const MAX_HISTORY = 12; // keep an EVEN number (pairs of user/assistant)
+
+// ---------------------------------------------------------------------------
+// Prompt helpers
+// ---------------------------------------------------------------------------
+
+function nowInfo(): string {
+  const tz = 'Asia/Baghdad';
+  const d = new Date();
+  const date = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(d); // YYYY-MM-DD
+  const time = new Intl.DateTimeFormat('en-GB', {
+    timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false,
+  }).format(d);
+  const weekday = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'long' }).format(d);
+  return (
+    `Current date: ${date} (${weekday}), time: ${time} (Asia/Baghdad). ` +
+    `Use it to turn words like "today", "tomorrow", "next Friday" into YYYY-MM-DD dates.`
+  );
+}
+
+const CONTROL_RULES = `
+You control the ANZU app through the tools you are given.
+- When the user asks you to DO something (add, change, finish, list, check, remind...), call the matching tool. Do not only describe what you would do.
+- You may call several tools in one turn when the request needs it.
+- Never say something was done unless a tool result confirms it. If a tool fails, say so honestly.
+- For deletions the app asks the user to confirm by itself; just call the tool.
+- If the request is unclear, ask ONE short question.`;
+
+const VOICE_RULES = `
+The user is talking to you by voice and your answer will be read aloud: reply in short, natural spoken sentences. No markdown, no bullet lists, no tables, no emojis.`;
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -64,6 +111,12 @@ function detectLanguage(text: string): 'ar' | 'en' {
   return /[؀-ۿ]/.test(text) ? 'ar' : 'en';
 }
 
+function remember(history: AgentMessage[] | undefined, user: string, assistant: string): void {
+  if (!history) return;
+  history.push({ role: 'user', content: user }, { role: 'assistant', content: assistant });
+  while (history.length > MAX_HISTORY) history.shift();
+}
+
 // ---------------------------------------------------------------------------
 // Tool registration (idempotent)
 // ---------------------------------------------------------------------------
@@ -90,10 +143,6 @@ function ensureToolsRegistered(): void {
   }
   toolsRegistered = true;
 }
-
-// ---------------------------------------------------------------------------
-// LLM provider (singleton per call to avoid re-reading env each iteration)
-// ---------------------------------------------------------------------------
 
 function buildToolsSchema() {
   ensureToolsRegistered();
@@ -125,20 +174,67 @@ function buildToolsSchema() {
 }
 
 // ---------------------------------------------------------------------------
+// Run ONE tool call (confirmation -> execute -> log). Returns the text for the model.
+// ---------------------------------------------------------------------------
+
+async function runOneTool(
+  tc: ToolCall,
+  autoConfirm: boolean,
+  confirmFn: ConfirmFn,
+): Promise<string> {
+  const toolName = tc.function?.name ?? '';
+  const params = parseToolArgs(tc.function?.arguments ?? '{}');
+
+  const lookup = getTool(toolName);
+  if (!lookup.ok || !lookup.tool) return `الأداة "${toolName}" غير موجودة.`;
+  const tool = lookup.tool;
+
+  if (needsUserConfirmation(tool, autoConfirm)) {
+    const confirmation = await requestConfirmation(
+      {
+        toolName: tool.name,
+        summary: `تنفيذ ${tool.name} بالمعطيات: ${JSON.stringify(params)}`,
+        detail: tool.description,
+      },
+      confirmFn,
+    );
+    if (!confirmation.approved) return `ألغى المستخدم تنفيذ ${tool.name}.`;
+  }
+
+  let execResult: { ok: boolean; summary: string; detail?: string; error?: string };
+  try {
+    execResult = await tool.execute(params);
+  } catch (e: unknown) {
+    execResult = { ok: false, summary: tool.name, error: e instanceof Error ? e.message : String(e) };
+  }
+
+  appendLog({
+    time: new Date().toISOString(),
+    actor: 'anzu',
+    action: `agent.${tool.name}`,
+    detail: JSON.stringify(params),
+    ok: execResult.ok,
+  });
+
+  return formatToolResult(execResult);
+}
+
+// ---------------------------------------------------------------------------
 // Main agent loop
 // ---------------------------------------------------------------------------
 
 /**
- * Run the agent loop.
- *
- * @param input     - what the user typed after "ask "
- * @param confirmFn - callback that shows a question and returns true/false.
- *                    Injected by module.ts so the main readline loop handles it.
+ * @param input     - what the user said or typed
+ * @param confirmFn - shows a question and returns true/false
+ * @param opts      - optional: { history, voice }
  */
-export async function runAgentLoop(input: string, confirmFn: ConfirmFn): Promise<string> {
+export async function runAgentLoop(
+  input: string,
+  confirmFn: ConfirmFn,
+  opts: AgentOptions = {},
+): Promise<string> {
   const config = loadConfig();
 
-  // Check LLM configuration before doing anything
   if (!config.llm.baseUrl || !config.llm.model || !config.llm.apiKey) {
     const missing: string[] = [];
     if (!config.llm.baseUrl) missing.push('ANZU_LLM_BASE_URL');
@@ -157,20 +253,29 @@ export async function runAgentLoop(input: string, confirmFn: ConfirmFn): Promise
   const provider = new OpenAICompatibleProvider('anzu-llm');
   const lang = detectLanguage(input);
 
-  const messages: Array<Record<string, unknown>> = [
-    { role: 'system', content: lang === 'ar' ? SYSTEM_PROMPT_AR : SYSTEM_PROMPT },
-    { role: 'user',   content: input },
+  const system =
+    (lang === 'ar' ? SYSTEM_PROMPT_AR : SYSTEM_PROMPT) +
+    '\n\n' + nowInfo() +
+    '\n' + CONTROL_RULES +
+    (opts.voice ? '\n' + VOICE_RULES : '');
+
+  const messages: AgentMessage[] = [
+    { role: 'system', content: system },
+    ...(opts.history ?? []),
+    { role: 'user', content: input },
   ];
 
-  const maxIterations = config.maxIterations;
+  const maxIterations = Math.max(config.maxIterations ?? 5, 3);
 
   for (let i = 0; i < maxIterations; i++) {
+    const lastTurn = i === maxIterations - 1; // force a plain answer on the last round
+
     let response: Awaited<ReturnType<typeof provider.chat>>;
     try {
       response = await provider.chat({
         messages: messages as Parameters<typeof provider.chat>[0]['messages'],
-        tools: i === 0 ? toolsSchema : undefined,
-        tool_choice: i === 0 ? 'auto' : 'none',
+        tools: toolsSchema,
+        tool_choice: lastTurn ? 'none' : 'auto',
       });
     } catch (e: unknown) {
       return `خطأ في الاتصال بالنموذج: ${e instanceof Error ? e.message : String(e)}`;
@@ -179,70 +284,37 @@ export async function runAgentLoop(input: string, confirmFn: ConfirmFn): Promise
     const choice = response.choices?.[0];
     if (!choice) return 'لم يرجع النموذج أي رد.';
 
-    const toolCall: ToolCall | undefined = (choice.message as any)?.tool_calls?.[0];
+    const msg = choice.message as any;
+    const toolCalls: ToolCall[] = Array.isArray(msg?.tool_calls) ? msg.tool_calls : [];
 
-    // ── No tool call → direct answer ──────────────────────────────────────
-    if (!toolCall) {
-      return (choice.message as any)?.content ?? 'لم يرجع النموذج أي رد.';
+    // No tool calls -> this is the final answer
+    if (toolCalls.length === 0) {
+      const text = String(msg?.content ?? '').trim() || 'لم يرجع النموذج أي رد.';
+      remember(opts.history, input, text);
+      return text;
     }
 
-    // ── Tool call ─────────────────────────────────────────────────────────
-    const toolName = toolCall.function?.name ?? '';
-    const params   = parseToolArgs(toolCall.function?.arguments ?? '{}');
-
-    const toolLookup = getTool(toolName);
-    const assistantMsg = {
+    // One assistant message that lists ALL the tool calls...
+    messages.push({
       role: 'assistant',
-      content: null,
-      tool_calls: [{
-        id: toolCall.id,
+      content: msg?.content ?? null,
+      tool_calls: toolCalls.map((tc) => ({
+        id: tc.id,
         type: 'function',
-        function: { name: toolName, arguments: toolCall.function?.arguments ?? '{}' },
-      }],
-    };
-
-    if (!toolLookup.ok || !toolLookup.tool) {
-      messages.push(assistantMsg);
-      messages.push({ role: 'tool', tool_call_id: toolCall.id, content: `الأداة "${toolName}" غير موجودة.` });
-      continue;
-    }
-
-    const tool = toolLookup.tool;
-
-    // ── Confirmation if needed ────────────────────────────────────────────
-    if (needsUserConfirmation(tool, config.autoConfirmWrites)) {
-      const confirmation = await requestConfirmation(
-        {
-          toolName: tool.name,
-          summary: `تنفيذ ${tool.name} بالمعطيات: ${JSON.stringify(params)}`,
-          detail: tool.description,
-        },
-        confirmFn,
-      );
-
-      if (!confirmation.approved) {
-        messages.push(assistantMsg);
-        messages.push({ role: 'tool', tool_call_id: toolCall.id, content: `ألغى المستخدم تنفيذ ${tool.name}.` });
-        continue;
-      }
-    }
-
-    // ── Execute ───────────────────────────────────────────────────────────
-    const execResult = await tool.execute(params);
-
-    appendLog({
-      time: new Date().toISOString(),
-      actor: 'anzu',
-      action: `agent.${tool.name}`,
-      detail: JSON.stringify(params),
-      ok: execResult.ok,
+        function: { name: tc.function?.name ?? '', arguments: tc.function?.arguments ?? '{}' },
+      })),
     });
 
-    messages.push(assistantMsg);
-    messages.push({ role: 'tool', tool_call_id: toolCall.id, content: formatToolResult(execResult) });
+    // ...then one tool result for each call, in order
+    for (const tc of toolCalls) {
+      const content = await runOneTool(tc, config.autoConfirmWrites, confirmFn);
+      messages.push({ role: 'tool', tool_call_id: tc.id, content });
+    }
   }
 
-  return `وصلت للحد الأقصى من المحاولات (${maxIterations}).`;
+  const limitMsg = `وصلت للحد الأقصى من المحاولات (${maxIterations}).`;
+  remember(opts.history, input, limitMsg);
+  return limitMsg;
 }
 
 // ---------------------------------------------------------------------------

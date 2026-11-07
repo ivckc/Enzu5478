@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ANZU - صوت</title>
+<script src="/cloud-auth-guard.js"></script>
+<style>
+  :root { --bg:#0b0b0d; --card:#15151a; --line:#2a2a31; --text:#ece7df; --muted:#8c8c95; --accent:#C1613A; --ok:#4caf7a; --bad:#d9534f; }
+  * { box-sizing:border-box; }
+  html,body { height:100%; margin:0; }
+  body { background:var(--bg); color:var(--text); font-family:Tahoma,Arial,sans-serif; display:flex; flex-direction:column; max-width:640px; margin:0 auto; }
+  header { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--line); }
+  header h1 { margin:0; font-size:18px; letter-spacing:5px; color:var(--accent); }
+  header a, header button { color:var(--muted); background:none; border:0; font-size:13px; cursor:pointer; text-decoration:none; }
+  .stage { padding:18px 16px 8px; text-align:center; }
+  .orb { width:120px; height:120px; margin:0 auto 10px; border-radius:50%;
+         background:radial-gradient(circle at 35% 30%, #e8895f, var(--accent) 45%, #5a2a17 100%);
+         box-shadow:0 0 40px rgba(193,97,58,.35); transition:transform .3s; }
+  .orb[data-state="idle"] { animation:breathe 4s ease-in-out infinite; }
+  .orb[data-state="listening"] { animation:pulse .9s ease-in-out infinite; box-shadow:0 0 60px rgba(193,97,58,.7); }
+  .orb[data-state="thinking"] { animation:spin 1.2s linear infinite; filter:hue-rotate(-20deg); border-radius:46% 54% 50% 50%; }
+  .orb[data-state="speaking"] { animation:talk .5s ease-in-out infinite; }
+  .orb[data-state="confirm"] { animation:pulse 1.6s ease-in-out infinite; filter:saturate(.7); }
+  @keyframes breathe { 50% { transform:scale(1.04); } }
+  @keyframes pulse { 50% { transform:scale(1.12); } }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes talk { 50% { transform:scale(1.08); } }
+  #status { font-size:15px; color:var(--muted); min-height:22px; }
+  #interim { font-size:14px; color:var(--text); min-height:20px; opacity:.8; }
+  #log { flex:1; overflow-y:auto; padding:8px 16px; display:flex; flex-direction:column; gap:8px; }
+  .msg { max-width:88%; padding:10px 13px; border-radius:12px; line-height:1.7; font-size:15px; white-space:pre-wrap; }
+  .msg.user { align-self:flex-start; background:#1d1d24; border:1px solid var(--line); }
+  .msg.anzu { align-self:flex-end; background:#241611; border:1px solid #4a2a1c; }
+  .msg.sys { align-self:center; color:var(--muted); font-size:13px; background:none; }
+  .bar { margin:6px 16px; padding:12px; border:1px solid var(--accent); border-radius:12px; background:#1b120e; display:flex; flex-direction:column; gap:10px; }
+  .bar[hidden] { display:none; }
+  .bar p { margin:0; font-size:14px; line-height:1.6; direction:ltr; text-align:left; word-break:break-word; }
+  .bar .btns { display:flex; gap:10px; }
+  .bar button { flex:1; padding:11px; border:0; border-radius:8px; font-size:15px; color:#fff; cursor:pointer; }
+  #yes { background:var(--ok); } #no { background:var(--bad); }
+  .toggles { display:flex; gap:16px; justify-content:center; padding:6px 16px; font-size:13px; color:var(--muted); }
+  .toggles label { display:flex; align-items:center; gap:6px; cursor:pointer; }
+  .input { display:flex; gap:8px; padding:10px 16px 18px; align-items:center; }
+  .input input { flex:1; padding:12px; background:var(--card); color:var(--text); border:1px solid var(--line); border-radius:24px; font-size:16px; }
+  .input input:focus { outline:none; border-color:var(--accent); }
+  .input button { border:0; cursor:pointer; color:#fff; }
+  #send { background:#2a2a31; padding:12px 16px; border-radius:24px; font-size:14px; }
+  #mic { width:54px; height:54px; border-radius:50%; background:var(--accent); font-size:22px; flex:none; }
+  #mic.on { background:var(--bad); animation:pulse .9s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<header>
+  <a href="/">← الرئيسية</a>
+  <h1>A.N.Z.U</h1>
+  <button id="reset" type="button">محادثة جديدة</button>
+</header>
+
+<div class="stage">
+  <div id="orb" class="orb" data-state="idle"></div>
+  <div id="status">جاهز</div>
+  <div id="interim"></div>
+</div>
+
+<div id="log"></div>
+
+<div id="confirmBar" class="bar" hidden>
+  <p id="confirmQ"></p>
+  <div class="btns">
+    <button id="yes" type="button">نعم، نفّذ</button>
+    <button id="no" type="button">لا، الغي</button>
+  </div>
+</div>
+
+<div class="toggles">
+  <label><input type="checkbox" id="auto"> محادثة مستمرة</label>
+  <label><input type="checkbox" id="speakOn" checked> صوت الرد</label>
+</div>
+
+<div class="input">
+  <input id="txt" placeholder="اكتب أو اضغط المايك..." autocomplete="off">
+  <button id="send" type="button">إرسال</button>
+  <button id="mic" type="button" title="تحدث">🎤</button>
+</div>
+
+<script>
+(function () {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var synth = window.speechSynthesis;
+  var $ = function (id) { return document.getElementById(id); };
+  var orb = $("orb"), statusEl = $("status"), interim = $("interim"), logEl = $("log"),
+      mic = $("mic"), txt = $("txt"), confirmBar = $("confirmBar"), confirmQ = $("confirmQ"),
+      autoEl = $("auto"), speakEl = $("speakOn");
+  var rec = null, busy = false, retries = 0, warnedVoice = false;
+
+  function setState(s, label) { orb.setAttribute("data-state", s); statusEl.textContent = label; }
+  function addMsg(who, text) {
+    var d = document.createElement("div");
+    d.className = "msg " + who;
+    d.textContent = text;
+    logEl.appendChild(d);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  // ---------- speaking ----------
+  function cleanForSpeech(t) {
+    return t.replace(/[*_#`>|~\[\]]/g, " ")
+            .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "")
+            .replace(/\s+/g, " ").trim();
+  }
+  function arVoice() {
+    if (!synth) return null;
+    var v = synth.getVoices();
+    for (var i = 0; i < v.length; i++) if (/^ar/i.test(v[i].lang)) return v[i];
+    return null;
+  }
+  function speak(text) {
+    return new Promise(function (resolve) {
+      if (!speakEl.checked || !synth) { resolve(); return; }
+      var clean = cleanForSpeech(text);
+      if (!clean) { resolve(); return; }
+      var v = arVoice();
+      if (!v && !warnedVoice) {
+        warnedVoice = true;
+        addMsg("sys", "جهازك ما بيه صوت عربي، فالنطق ممكن يكون ضعيف. ثبّت صوت عربي من إعدادات ويندوز (Speech).");
+      }
+      synth.cancel();
+      var parts = clean.match(/[^.!?؟\n]+[.!?؟]?/g) || [clean];
+      var chunks = [], cur = "";
+      parts.forEach(function (p) {
+        if ((cur + p).length > 180) { if (cur) chunks.push(cur); cur = p; } else { cur += p; }
+      });
+      if (cur) chunks.push(cur);
+      var i = 0;
+      setState("speaking", "أحچي...");
+      (function next() {
+        if (i >= chunks.length) { resolve(); return; }
+        var u = new SpeechSynthesisUtterance(chunks[i++]);
+        u.lang = "ar-SA";
+        if (v) u.voice = v;
+        u.onend = next;
+        u.onerror = next;
+        synth.speak(u);
+      })();
+    });
+  }
+
+  // ---------- listening ----------
+  function stopListening() {
+    if (rec) {
+      rec.onend = null; rec.onerror = null; rec.onresult = null;
+      try { rec.abort(); } catch (e) {}
+      rec = null;
+    }
+    mic.classList.remove("on");
+    interim.textContent = "";
+  }
+  function listen(mode) {
+    if (!SR) { setState("idle", "المتصفح ما يدعم الصوت، اكتب نصاً (استخدم Chrome)"); return; }
+    if (synth) synth.cancel();
+    stopListening();
+    var r = new SR();
+    rec = r;
+    r.lang = "ar-IQ";
+    r.interimResults = true;
+    r.continuous = false;
+    var finalText = "", failed = false;
+    r.onstart = function () { mic.classList.add("on"); setState("listening", "أسمعك..."); };
+    r.onresult = function (e) {
+      var t = "";
+      for (var i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+      finalText = t;
+      interim.textContent = t;
+    };
+    r.onerror = function (e) {
+      failed = true;
+      setState("idle",
+        e.error === "not-allowed" ? "اسمح للميكروفون من إعدادات المتصفح" :
+        e.error === "no-speech" ? "ما سمعت شي، اضغط المايك وجرّب" :
+        "تعذّر التعرف على الصوت (" + e.error + ")");
+    };
+    r.onend = function () {
+      mic.classList.remove("on");
+      interim.textContent = "";
+      if (rec === r) rec = null;
+      if (failed) return;
+      var t = finalText.trim();
+      if (!t) { setState("idle", "جاهز"); return; }
+      if (mode === "confirm") onConfirmSpeech(t); else sendText(t);
+    };
+    try { r.start(); } catch (e) {}
+  }
+
+  // ---------- talking to the server ----------
+  function post(url, body) {
+    return fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      if (r.status === 429) throw new Error("طلبات كثيرة، انتظر شوي");
+      if (r.status === 409) throw new Error("ANZU مشغول بطلب ثاني");
+      if (!r.ok) throw new Error("صار خطأ بالاتصال بالسيرفر");
+      return r.json();
+    }).then(handleEvent).catch(function (e) {
+      busy = false;
+      confirmBar.hidden = true;
+      addMsg("sys", "⚠️ " + e.message);
+      setState("idle", "جاهز");
+    });
+  }
+  function sendText(t) {
+    if (busy) return;
+    busy = true;
+    addMsg("user", t);
+    setState("thinking", "أفكر...");
+    post("/api/voice/ask", { text: t });
+  }
+  function handleEvent(ev) {
+    if (ev.type === "confirm") {
+      retries = 0;
+      confirmQ.textContent = ev.question;
+      confirmBar.hidden = false;
+      setState("confirm", "أنتظر تأكيدك");
+      speak("أحتاج تأكيدك. قل نعم أو لا.").then(function () {
+        if (!confirmBar.hidden) listen("confirm");
+      });
+      return;
+    }
+    busy = false;
+    if (ev.type === "error") {
+      addMsg("sys", "⚠️ " + ev.text);
+      setState("idle", "جاهز");
+      return;
+    }
+    addMsg("anzu", ev.text);
+    speak(ev.text).then(function () {
+      if (autoEl.checked) listen("command"); else setState("idle", "جاهز");
+    });
+  }
+
+  // ---------- confirmation ----------
+  function answerConfirm(ok) {
+    confirmBar.hidden = true;
+    stopListening();
+    if (synth) synth.cancel();
+    setState("thinking", ok ? "أنفّذ..." : "ألغيت...");
+    post("/api/voice/confirm", { approve: ok });
+  }
+  function onConfirmSpeech(t) {
+    var no = /(^|\s)(لا|لأ|كلا|الغي|ألغي|الغاء|إلغاء|no)(\s|$)/i;
+    var yes = /(^|\s)(نعم|اي|أي|ايوه|أيوه|ايوا|موافق|تمام|نفذ|نفّذ|اوكي|أوكي|yes|ok)(\s|$)/i;
+    if (no.test(t)) { answerConfirm(false); return; }
+    if (yes.test(t)) { answerConfirm(true); return; }
+    if (retries < 1) {
+      retries++;
+      speak("ما فهمت. قل نعم أو لا.").then(function () {
+        if (!confirmBar.hidden) listen("confirm");
+      });
+    } else {
+      setState("confirm", "اضغط نعم أو لا");
+    }
+  }
+
+  // ---------- buttons ----------
+  $("yes").onclick = function () { answerConfirm(true); };
+  $("no").onclick = function () { answerConfirm(false); };
+  mic.onclick = function () {
+    if (rec) { stopListening(); setState("idle", "جاهز"); return; }
+    listen(confirmBar.hidden ? "command" : "confirm");
+  };
+  function sendTyped() {
+    var t = txt.value.trim();
+    if (!t) return;
+    txt.value = "";
+    stopListening();
+    if (synth) synth.cancel();
+    sendText(t);
+  }
+  $("send").onclick = sendTyped;
+  txt.addEventListener("keydown", function (e) { if (e.key === "Enter") sendTyped(); });
+  $("reset").onclick = function () {
+    stopListening();
+    if (synth) synth.cancel();
+    fetch("/api/voice/reset", { method: "POST", credentials: "same-origin" });
+    logEl.innerHTML = "";
+    setState("idle", "جاهز");
+  };
+
+  if (!SR) addMsg("sys", "الصوت يحتاج Chrome. تكدر تكتب نصاً بالمقابل.");
+  if (synth) synth.onvoiceschanged = function () {};
+})();
+</script>
+</body>
+</html>

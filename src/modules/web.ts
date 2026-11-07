@@ -1,3 +1,4 @@
+import { mountVoice } from "../cloud/voice.js";
 import express from "express";
 import { mountCloud, llmLimiter } from "../cloud/index.js";
 import * as crypto from "node:crypto";
@@ -341,6 +342,8 @@ export const webModule: Module = {
   init: () => {
     const app = express();
     mountCloud(app);
+    mountCloud(app);
+    mountVoice(app);
 
     // طلب الـ LLM: غيّر الاسم إذا مساره عندك مختلف
     app.use(["/api/ask", "/api/chat"], llmLimiter);
