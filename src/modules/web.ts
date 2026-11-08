@@ -38,7 +38,8 @@ const FILES: Record<string, string> = { "/": "index.html",
   "/raven.svg": "raven.svg",
   "/anzu-theme.css": "anzu-theme.css",
   "/anzu-raven.js": "anzu-raven.js",
-  "/anzu-ui.js": "anzu-ui.js"};
+  "/anzu-ui.js": "anzu-ui.js",
+  "/anzu-voice.js": "anzu-voice.js"};
 const TYPES: Record<string, string> = { 
   ".html": "text/html; charset=utf-8",
   ".svg": "image/svg+xml",
@@ -238,7 +239,7 @@ function handleAgent(req: http.IncomingMessage, res: http.ServerResponse): void 
   req.on("data", (chunk: unknown) => { body += String(chunk); if (body.length > 8192) tooBig = true; });
   req.on("end", () => {
     if (tooBig) return json(res, 413, { ok: false, lines: ["Too big"] });
-    let data: { text?: unknown; history?: unknown; confirmId?: unknown; approved?: unknown };
+    let data: { text?: unknown; history?: unknown; confirmId?: unknown; approved?: unknown; voice?: unknown };
     try { data = JSON.parse(body) as typeof data; }
     catch { return json(res, 400, { ok: false, lines: ["Bad JSON"] }); }
 
@@ -284,7 +285,7 @@ function handleAgent(req: http.IncomingMessage, res: http.ServerResponse): void 
       resolve: null,
       loop: Promise.resolve(""),
     };
-    turn.loop = runAgentLoop(input, makeAgentConfirmFn(turn));
+    turn.loop = runAgentLoop(input, makeAgentConfirmFn(turn), { voice: data.voice === true });
     void settleTurn(res, turn);
   });
 }
@@ -341,7 +342,6 @@ export const webModule: Module = {
   name: "web",
   init: () => {
     const app = express();
-    mountCloud(app);
     mountCloud(app);
     mountVoice(app);
 

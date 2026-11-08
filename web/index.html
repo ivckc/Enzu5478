@@ -1,5 +1,6 @@
 <!doctype html>
-<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="anzu-token" content="__TOKEN__"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="ar" dir="rtl"><head>
+<script src="/cloud-auth-guard.js"></script><meta charset="utf-8"><meta name="anzu-token" content="__TOKEN__"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>A.N.Z.U</title>
 <style>
 :root{--bg:#0b0605;--ln:#5a3a28;--tx:#f1e4d8;--mu:#a88a76;--ac:#d98a60;--ok:#7fc79a}
@@ -92,7 +93,6 @@ label{display:block;margin:8px 0;color:var(--mu);font-size:13px}label input,labe
   <div class="anzu-bar">
     <button class="anzu-mic" type="button" aria-label="الصوت"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="6" y="2" width="4" height="8" rx="2"/><path d="M3.5 8a4.5 4.5 0 0 0 9 0M8 12.5V15"/></svg></button>
     <input data-anzu-command type="text" placeholder="اكتب أو احچي...  مثال: شعندي مهام هذا الشهر">
-    <span style="font-size:12px;color:var(--a-muted);white-space:nowrap">الصوت غير مفعّل بعد</span>
   </div>
   <!-- مؤقتة ومخفية: حتى يبقى كود الصفحة القديم يشتغل. نمسحها بمرحلة التنظيف -->
   <div id="hr" style="display:none"></div>
@@ -325,6 +325,7 @@ function hash(){if(document.activeElement)document.activeElement.blur();lastSig=
 </script>
 <script src="/anzu-raven.js"></script>
 <script src="/anzu-ui.js"></script>
+<script src="/anzu-voice.js"></script>
 <script>
 const anzuState = () => fetch("/api/state").then(r => r.json());
 AnzuUI.init({
@@ -339,6 +340,7 @@ AnzuUI.init({
   onNavigate: (w) => { if (w === "home") AnzuUI.home(); go(w === "chat" ? "anzu" : w); },
   onUnknown: (text) => { go("anzu"); chatSend(text); }
 });
+AnzuVoice.init({ ui: AnzuUI, root: "#home-view" });
 </script>
 </body></html>
 

@@ -490,6 +490,6 @@
     return API;
   }
 
-  var API = { init: init, run: run, go: go, home: home, setStatus: setStatus, setActive: setActive, setCardStyle: setCardStyle, setTheme: setTheme, renderAppearance: renderAppearance };
+  var API = { init: init, detect: detect, run: run, go: go, home: home, setStatus: setStatus, setActive: setActive, setCardStyle: setCardStyle, setTheme: setTheme, renderAppearance: renderAppearance };
   global.AnzuUI = API;
 })(window);
