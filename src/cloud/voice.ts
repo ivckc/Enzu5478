@@ -101,6 +101,46 @@ export function mountVoice(app: Express) {
     res.json(await nextEvent(s));
   });
 
+  // Speech -> text with Groq Whisper (the audio arrives as the raw request body)
+  r.post(
+    "/transcribe",
+    llmLimiter,
+    express.raw({ type: () => true, limit: "10mb" }),
+    async (req: AuthedRequest, res: Response) => {
+      try {
+        const buf = req.body as Buffer;
+        if (!Buffer.isBuffer(buf) || buf.length < 500) {
+          return res.status(400).json({ error: "empty audio" });
+        }
+        const apiKey = process.env.GROQ_API_KEY || process.env.ANZU_LLM_API_KEY;
+        if (!apiKey) return res.status(500).json({ error: "server not configured" });
+
+        const type = String(req.headers["content-type"] || "audio/webm");
+        const ext = type.includes("mp4") ? "mp4" : "webm";
+        const form = new FormData();
+        form.append("file", new Blob([new Uint8Array(buf)], { type }), `audio.${ext}`);
+        form.append("model", process.env.WHISPER_MODEL || "whisper-large-v3-turbo");
+        form.append("language", "ar");
+        form.append("response_format", "json");
+
+        const g = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey}` },
+          body: form,
+        });
+        if (!g.ok) {
+          console.error("Whisper error:", g.status);
+          return res.status(502).json({ error: "transcription failed" });
+        }
+        const data = (await g.json()) as { text?: string };
+        res.json({ text: (data.text || "").trim() });
+      } catch (e) {
+        console.error("transcribe error:", e instanceof Error ? e.message : e);
+        res.status(500).json({ error: "server error" });
+      }
+    }
+  );
+
   // Start a fresh conversation
   r.post("/reset", (req: AuthedRequest, res: Response) => {
     const s = getSession(req.userId!);
