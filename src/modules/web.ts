@@ -14,6 +14,7 @@ import { say } from "../core/result";
 import { runAgentLoop } from "../agent/loop";
 import { loadConfig } from "../agent/config";
 import type { ConfirmFn } from "../agent/confirmation";
+import { isOwner, runAs } from "../core/userctx";
 
 const PORT = Number(process.env.PORT) || 4747;
 const HOST = process.env.PORT ? "0.0.0.0" : "127.0.0.1"; // محلي على جهازك، ومفتوح بس على السحابة
@@ -62,7 +63,19 @@ const ALLOWED = [
 
 // A secret made fresh at every start. Only this page receives it, inside its own HTML.
 const TOKEN = crypto.randomBytes(16).toString("hex");
-const questions = new Map<string, { run: () => Outcome; expires: number }>();
+const questions = new Map<string, { run: () => Outcome; expires: number; userId: string }>();
+
+// Who is asking? (set by the login check in front of this page; never taken from the browser)
+function whoIs(req: http.IncomingMessage): string | null {
+  const id = (req as unknown as { userId?: unknown }).userId;
+  return typeof id === "string" && id !== "" ? id : null;
+}
+
+// Commands that act on the whole machine or on shared files: the owner only.
+const OWNER_ONLY = ["backup", "restore", "backups", "autostart"];
+function ownerOnly(text: string): boolean {
+  return OWNER_ONLY.some((name) => text === name || text.startsWith(name + " "));
+}
 
 // Session context for agent continuity.
 // The browser keeps the last ~10 messages of the current page session in memory
@@ -90,11 +103,11 @@ function isAllowed(text: string): boolean {
   return ALLOWED.some((name) => text === name || text.startsWith(name + " "));
 }
 
-function answer(res: http.ServerResponse, outcome: Outcome): void {
+function answer(res: http.ServerResponse, outcome: Outcome, userId: string): void {
   let confirmId: string | undefined;
   if (outcome.confirm !== undefined) {
     confirmId = crypto.randomBytes(6).toString("hex");
-    questions.set(confirmId, { run: outcome.confirm, expires: Date.now() + 60_000 });
+    questions.set(confirmId, { run: outcome.confirm, expires: Date.now() + 60_000, userId });
   }
   json(res, 200, { ok: outcome.ok, lines: outcome.lines, confirmId });
 }
@@ -106,6 +119,10 @@ function handleCommand(req: http.IncomingMessage, res: http.ServerResponse): voi
   }
   if (req.headers["x-anzu-token"] !== TOKEN) {
     return json(res, 403, { ok: false, lines: ["Forbidden"] });
+  }
+  const userId = whoIs(req);
+  if (userId === null) {
+    return json(res, 401, { ok: false, lines: ["Login required"] });
   }
   if (!(req.headers["content-type"] ?? "").startsWith("application/json")) {
     return json(res, 415, { ok: false, lines: ["Send JSON"] });
@@ -133,22 +150,31 @@ function handleCommand(req: http.IncomingMessage, res: http.ServerResponse): voi
         questions.delete(id);
       }
     }
-    if (typeof data.confirm === "string") {
-      const q = questions.get(data.confirm);
-      if (q === undefined) {
-        return json(res, 400, { ok: false, lines: ["That question expired. Try again."] });
+    try {
+      if (typeof data.confirm === "string") {
+        const q = questions.get(data.confirm);
+        // a question can only be answered by the person it was asked to
+        if (q === undefined || q.userId !== userId) {
+          return json(res, 400, { ok: false, lines: ["That question expired. Try again."] });
+        }
+        questions.delete(data.confirm);
+        return answer(res, runAs(userId, q.run), userId);
       }
-      questions.delete(data.confirm);
-      return answer(res, q.run());
+      const text = typeof data.text === "string" ? data.text.trim() : "";
+      if (text === "" || text.length > 500 || /[\r\n]/.test(text)) {
+        return json(res, 400, { ok: false, lines: ["Bad command"] });
+      }
+      if (!isAllowed(text)) {
+        return json(res, 403, { ok: false, lines: ["The page may not run that command."] });
+      }
+      if (ownerOnly(text) && !isOwner(userId)) {
+        return json(res, 403, { ok: false, lines: ["هذا الأمر للمالك فقط."] });
+      }
+      answer(res, runAs(userId, () => runCommand(text)), userId);
+    } catch (err: unknown) {
+      console.error("command error:", err instanceof Error ? err.message : err);
+      json(res, 500, { ok: false, lines: ["صار خطأ بالسيرفر."] });
     }
-    const text = typeof data.text === "string" ? data.text.trim() : "";
-    if (text === "" || text.length > 500 || /[\r\n]/.test(text)) {
-      return json(res, 400, { ok: false, lines: ["Bad command"] });
-    }
-    if (!isAllowed(text)) {
-      return json(res, 403, { ok: false, lines: ["The page may not run that command."] });
-    }
-    answer(res, runCommand(text));
   });
 }
 
@@ -157,6 +183,8 @@ function handleCommand(req: http.IncomingMessage, res: http.ServerResponse): voi
 // once per tool that needs approval.
 
 interface AgentTurn {
+  userId: string;
+  onStop: (() => void) | null; // wakes the waiting request when the agent asks for approval
   confirmId: string | null;
   summary: string | null;
   resolve: ((approved: boolean) => void) | null;
@@ -166,22 +194,34 @@ interface AgentTurn {
 // Pending approvals: id → the turn that is waiting. Deletes always land here,
 // even when AUTO_CONFIRM_WRITES=true, because the tool risk is 'sensitive'.
 const pendingAgentConfirms = new Map<string, AgentTurn>();
-let agentConfirmSeq = 0;
 
 function makeAgentConfirmFn(turn: AgentTurn): ConfirmFn {
   return (question) =>
     new Promise<boolean>((resolve) => {
-      const id = String(++agentConfirmSeq);
+      const id = crypto.randomBytes(8).toString("hex");
       turn.confirmId = id;
       turn.summary = question;
       turn.resolve = resolve;
       pendingAgentConfirms.set(id, turn);
+      if (turn.onStop !== null) {
+        const wake = turn.onStop;
+        turn.onStop = null;
+        wake();
+      }
     });
 }
 
-// Waits a tick, then reports whether the loop is waiting for approval.
+// Waits until the agent either asks for approval or finishes, then reports which one.
 async function confirmState(turn: AgentTurn): Promise<boolean> {
-  await new Promise<void>((r) => setImmediate(r));
+  await new Promise<void>((resolve) => {
+    if (turn.confirmId !== null && pendingAgentConfirms.has(turn.confirmId)) {
+      resolve();
+      return;
+    }
+    turn.onStop = resolve;
+    turn.loop.then(() => resolve(), () => resolve());
+  });
+  turn.onStop = null;
   return turn.confirmId !== null && pendingAgentConfirms.has(turn.confirmId);
 }
 
@@ -232,6 +272,10 @@ function handleAgent(req: http.IncomingMessage, res: http.ServerResponse): void 
   if (req.headers["x-anzu-token"] !== TOKEN) {
     return json(res, 403, { ok: false, lines: ["Forbidden"] });
   }
+  const userId = whoIs(req);
+  if (userId === null) {
+    return json(res, 401, { ok: false, lines: ["Login required"] });
+  }
   if (!(req.headers["content-type"] ?? "").startsWith("application/json")) {
     return json(res, 415, { ok: false, lines: ["Send JSON"] });
   }
@@ -247,7 +291,8 @@ function handleAgent(req: http.IncomingMessage, res: http.ServerResponse): void 
     // ── Answer an approval request ────────────────────────────────────────
     if (typeof data.confirmId === "string") {
       const turn = pendingAgentConfirms.get(data.confirmId);
-      if (turn === undefined) {
+      // an approval can only be given by the person it was asked to
+      if (turn === undefined || turn.userId !== userId) {
         return json(res, 400, { ok: false, lines: ["انتهت صلاحية الطلب. أعد المحاولة."] });
       }
       pendingAgentConfirms.delete(data.confirmId);
@@ -281,12 +326,15 @@ function handleAgent(req: http.IncomingMessage, res: http.ServerResponse): void 
       : text;
 
     const turn: AgentTurn = {
+      userId,
+      onStop: null,
       confirmId: null,
       summary: null,
       resolve: null,
       loop: Promise.resolve(""),
     };
-    turn.loop = runAgentLoop(input, makeAgentConfirmFn(turn), { voice: data.voice === true });
+    // the whole agent run (all its tools, awaits and confirmations) belongs to this user
+    turn.loop = runAs(userId, () => runAgentLoop(input, makeAgentConfirmFn(turn), { voice: data.voice === true }));
     void settleTurn(res, turn);
   });
 }
@@ -298,6 +346,10 @@ function handle(req: http.IncomingMessage, res: http.ServerResponse): void {
     return send(res, 403, "text/plain", "Forbidden");
   }
   const url = (req.url ?? "/").split("?")[0];
+  const userId = whoIs(req);
+  if (url.startsWith("/api/") && userId === null) {
+    return json(res, 401, { ok: false, lines: ["Login required"] });
+  }
   if (req.method === "POST" && url === "/api/agent") {
     return handleAgent(req, res);
   }
@@ -308,25 +360,43 @@ function handle(req: http.IncomingMessage, res: http.ServerResponse): void {
     return send(res, 405, "text/plain", "Method not allowed");
   }
   if (url === "/api/state") {
-    const log = readLog();
-    return json(res, 200, {
-      now: new Date().toISOString(),
-      tasks,
-      goals,
-      ...getSnapshots(),
-      activity: log === null ? [] : log.entries.slice(-12),
-    });
+    try {
+      // The text is built INSIDE the user's scope: the lists load their data lazily, so
+      // turning them into JSON after leaving runAs() would read the OWNER's data.
+      const body = runAs(userId, () => {
+        const log = readLog();
+        return JSON.stringify({
+          now: new Date().toISOString(),
+          tasks,
+          goals,
+          ...getSnapshots(),
+          activity: log === null ? [] : log.entries.slice(-12),
+        });
+      });
+      return send(res, 200, "application/json; charset=utf-8", body);
+    } catch (err: unknown) {
+      console.error("state error:", err instanceof Error ? err.message : err);
+      return json(res, 500, { ok: false, lines: ["صار خطأ بالسيرفر."] });
+    }
   }
   if (url === "/api/export") {
-    const snap = getSnapshots();
-    const day = new Date().toISOString().slice(0, 10);
-    res.writeHead(200, {
-      "Content-Type": "application/json; charset=utf-8",
-      "Content-Disposition": `attachment; filename="anzu-export-${day}.json"`,
-      "Cache-Control": "no-store",
-    });
-    res.end(JSON.stringify({ exportedAt: new Date().toISOString(), tasks, goals, reminders: snap.reminders ?? [], habits: snap.habits ?? [] }, null, 2));
-    return;
+    try {
+      const body = runAs(userId, () => {
+        const snap = getSnapshots();
+        return JSON.stringify({ exportedAt: new Date().toISOString(), tasks, goals, reminders: snap.reminders ?? [], habits: snap.habits ?? [] }, null, 2);
+      });
+      const day = new Date().toISOString().slice(0, 10);
+      res.writeHead(200, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Disposition": `attachment; filename="anzu-export-${day}.json"`,
+        "Cache-Control": "no-store",
+      });
+      res.end(body);
+      return;
+    } catch (err: unknown) {
+      console.error("export error:", err instanceof Error ? err.message : err);
+      return json(res, 500, { ok: false, lines: ["صار خطأ بالسيرفر."] });
+    }
   }
   const file = FILES[url];
   if (file === undefined) {

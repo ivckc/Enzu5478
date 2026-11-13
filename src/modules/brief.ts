@@ -2,6 +2,7 @@ import type { Job, LogInfo, Module, Notice, Result } from "../core/types";
 import { readJsonObject, saveJsonObject } from "../core/storage";
 import { problem, say } from "../core/result";
 import { splitFirst } from "../core/parse";
+import { DataDamaged, damagedLines, perUserObject } from "../core/userctx";
 import { tasks } from "../core/data";
 import { getSnapshots } from "../core/snapshot";
 import { reminders } from "./reminders";
@@ -28,9 +29,35 @@ function defaults(): Config {
   return { enabled: false, time: "08:00", days: [0, 1, 2, 3, 4, 5, 6], tz: "Asia/Baghdad", lastSent: null };
 }
 
-let config: Config = defaults();
-let warnedDate: string | null = null; // warn only once a day when the phone is not ready
-let pendingTest = false; // "brief test" waits for the next tick (same path as real reminders)
+// Each user has their OWN morning-brief settings (hour, days) and flags.
+function loadConfigFile(): Config {
+  const loaded = readJsonObject(CONFIG_FILE);
+  if (loaded === null || (loaded !== undefined && !isConfig(loaded))) {
+    throw new DataDamaged([
+      "brief.json is damaged.",
+      "I stopped so I do not overwrite it.",
+      "Fix it or rename it, then run me again.",
+    ]);
+  }
+  if (loaded === undefined) {
+    return defaults();
+  }
+  return {
+    enabled: loaded.enabled as boolean,
+    time: loaded.time as string,
+    days: [...(loaded.days as number[])],
+    tz: loaded.tz as string,
+    lastSent: loaded.lastSent as string | null,
+  };
+}
+
+const config: Config = perUserObject<Config>(loadConfigFile);
+// warnedDate: warn only once a day when the phone is not ready
+// pendingTest: "brief test" waits for the next tick (same path as real reminders)
+const flags = perUserObject<{ warnedDate: string | null; pendingTest: boolean }>(() => ({
+  warnedDate: null,
+  pendingTest: false,
+}));
 
 // ---------- file ----------
 
@@ -179,8 +206,8 @@ function noticeFor(cfg: Config): Notice {
 // ---------- the job: checks every few seconds if it is time ----------
 
 function tick(): Result | null {
-  if (pendingTest) {
-    pendingTest = false;
+  if (flags.pendingTest) {
+    flags.pendingTest = false;
     return {
       ok: true,
       lines: ["[BRIEF] تجربة الملخص أُرسلت للهاتف."],
@@ -200,10 +227,10 @@ function tick(): Result | null {
     return null;
   }
   if (!phoneReady()) {
-    if (warnedDate === now.date) {
+    if (flags.warnedDate === now.date) {
       return null;
     }
-    warnedDate = now.date;
+    flags.warnedDate = now.date;
     return {
       ok: false,
       lines: ["[BRIEF] ملخص الصباح جاهز، لكن إشعارات الهاتف مو مفعّلة فما اكدر أرسله."],
@@ -234,7 +261,7 @@ function update(apply: (c: Config) => void, lines: string[], action: string): Re
   if (saveConfig()) {
     return { ok: true, lines, logs: [{ action, detail: lines[0], ok: true }] };
   }
-  config = previous;
+  Object.assign(config, previous);
   return {
     ok: false,
     lines: ["ما قدرت أحفظ الإعدادات. ما تغيّر شي."],
@@ -259,22 +286,10 @@ function statusResult(): Result {
 export const briefModule: Module = {
   name: "brief",
   init: () => {
-    const loaded = readJsonObject(CONFIG_FILE);
-    if (loaded === null || (loaded !== undefined && !isConfig(loaded))) {
-      return [
-        "brief.json is damaged.",
-        "I stopped so I do not overwrite it.",
-        "Fix it or rename it, then run me again.",
-      ];
-    }
-    if (loaded !== undefined) {
-      config = {
-        enabled: loaded.enabled as boolean,
-        time: loaded.time as string,
-        days: [...(loaded.days as number[])],
-        tz: loaded.tz as string,
-        lastSent: loaded.lastSent as string | null,
-      };
+    try {
+      void config.enabled; // checks the owner's file now; other users load when they first use it
+    } catch (e) {
+      return damagedLines(e);
     }
     return [];
   },
@@ -370,7 +385,7 @@ export const briefModule: Module = {
           if (!phoneReady()) {
             return problem("إشعارات الهاتف مو مفعّلة. فعّلها أولاً من قسم PHONE (notify setup ثم notify on).");
           }
-          pendingTest = true;
+          flags.pendingTest = true;
           return {
             ok: true,
             lines: ["تمام، تجربة الملخص راح توصلك على الهاتف خلال ثواني."],

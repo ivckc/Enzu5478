@@ -2,6 +2,7 @@ import type { Module, Result } from "../core/types";
 import { nextIdFor, readJsonArray, saveJsonArray } from "../core/storage";
 import { splitFirst, toId } from "../core/parse";
 import { problem, say } from "../core/result";
+import { DataDamaged, currentUser, damagedLines, perUserArray } from "../core/userctx";
 
 type Habit = {
   id: number;
@@ -13,7 +14,14 @@ type Habit = {
 };
 
 const HABITS_FILE = "habits.json";
-const habits: Habit[] = [];
+// A different list for each user (loaded from that user's own habits.json).
+const habits: Habit[] = perUserArray<Habit>(() => {
+  const loaded = readJsonArray<unknown>(HABITS_FILE);
+  if (loaded === null || !loaded.every(isHabit)) {
+    throw new DataDamaged(["habits.json is damaged.", "I stopped so I do not overwrite it.", "Fix it or rename it, then run me again."]);
+  }
+  return loaded as Habit[];
+});
 
 function ymd(d: Date): string {
   const p = (n: number): string => String(n).padStart(2, "0");
@@ -161,12 +169,10 @@ function textEdit(rest: string, field: "title" | "note"): Result {
 export const habitsModule: Module = {
   name: "habits",
   init: () => {
-    const loaded = readJsonArray<unknown>(HABITS_FILE);
-    if (loaded === null || !loaded.every(isHabit)) {
-      return ["habits.json is damaged.", "I stopped so I do not overwrite it.", "Fix it or rename it, then run me again."];
-    }
-    for (const h of loaded) {
-      habits.push(h);
+    try {
+      void habits.length; // checks the owner's file now; other users load when they first use it
+    } catch (e) {
+      return damagedLines(e);
     }
     return [];
   },
@@ -180,7 +186,7 @@ export const habitsModule: Module = {
         if (rest === "") {
           return problem("Use: habit add <title>");
         }
-        const habit: Habit = { id: nextIdFor(habits), userId: "local", title: rest, note: "", days: [], created: today() };
+        const habit: Habit = { id: nextIdFor(habits), userId: currentUser(), title: rest, note: "", days: [], created: today() };
         habits.push(habit);
         const detail = `#${habit.id} ${rest}`;
         if (save()) {

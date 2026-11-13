@@ -5,6 +5,7 @@ import path from "node:path";
 import { AuthedRequest } from "./auth.js";
 import { llmLimiter } from "./index.js";
 import { runAgentLoop } from "../agent/loop.js";
+import { runAs } from "../core/userctx.js";
 
 type AgentMessage = Record<string, unknown>;
 type Ev =
@@ -83,7 +84,8 @@ export function mountVoice(app: Express) {
         emit(s, { type: "confirm", question });
       });
 
-    runAgentLoop(text, confirmFn, { history: s.history, voice: true })
+    // the whole agent run belongs to this user (their tasks, their reminders, their log)
+    runAs(req.userId, () => runAgentLoop(text, confirmFn, { history: s.history, voice: true }))
       .then((answer) => emit(s, { type: "answer", text: answer }))
       .catch((e) => emit(s, { type: "error", text: e instanceof Error ? e.message : String(e) }))
       .finally(() => {

@@ -5,6 +5,8 @@ import cors from "cors";
 import path from "node:path";
 import rateLimit from "express-rate-limit";
 import { authRouter, requireAuth, AuthedRequest } from "./auth.js";
+import { db } from "./db.js";
+import { setDirectory } from "../core/userctx.js";
 import { itemsRouter } from "./items.js";
 
 // Per-user limiter for the LLM endpoint (protects your API credit).
@@ -26,6 +28,22 @@ const generalLimiter = rateLimit({ windowMs: 60_000, limit: 300 });
 
 const webDir = path.join(process.cwd(), "src", "cloud", "web");
 const json = express.json({ limit: "100kb" });
+
+// Tells the core who the accounts are, and which one is the OWNER (the owner keeps using the
+// original data files in the project folder; everybody else gets their own folder).
+// The owner = the account named in ANZU_OWNER_USERNAME, otherwise the FIRST account created.
+setDirectory({
+  ownerId: () => {
+    const name = process.env.ANZU_OWNER_USERNAME;
+    const row = (
+      name
+        ? db.prepare("SELECT id FROM users WHERE username = ?").get(name)
+        : db.prepare("SELECT id FROM users ORDER BY created_at ASC LIMIT 1").get()
+    ) as { id: string } | undefined;
+    return row ? row.id : null;
+  },
+  allIds: () => (db.prepare("SELECT id FROM users").all() as { id: string }[]).map((r) => r.id),
+});
 
 export function mountCloud(app: Express) {
   app.set("trust proxy", 1); // Railway / Render sit behind a proxy

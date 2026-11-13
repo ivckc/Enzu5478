@@ -8,6 +8,7 @@ import {
   saveJsonObject,
 } from "../core/storage";
 import { problem, say } from "../core/result";
+import { DataDamaged, damagedLines, perUserArray, perUserObject } from "../core/userctx";
 
 const CONFIG_FILE = "notify.json";
 const OUTBOX_FILE = "outbox.json";
@@ -40,8 +41,40 @@ type OutboxItem = {
   lastError: string | null;
 };
 
-let config: Config = { enabled: false, server: DEFAULT_SERVER, topic: null };
-const outbox: OutboxItem[] = [];
+// Each user has their OWN phone topic, settings and waiting messages.
+function loadConfigFile(): Config {
+  const loaded = readJsonObject(CONFIG_FILE);
+  if (loaded === null || (loaded !== undefined && !isConfig(loaded))) {
+    throw new DataDamaged([
+      "notify.json is damaged.",
+      "I stopped so I do not overwrite it.",
+      "Fix it or rename it, then run me again.",
+    ]);
+  }
+  if (loaded === undefined) {
+    return { enabled: false, server: DEFAULT_SERVER, topic: null };
+  }
+  return {
+    enabled: loaded.enabled as boolean,
+    server: loaded.server as string,
+    topic: loaded.topic as string | null,
+  };
+}
+
+function loadOutboxFile(): OutboxItem[] {
+  const loaded = readJsonArray<unknown>(OUTBOX_FILE);
+  if (loaded === null || !loaded.every(isOutboxItem)) {
+    throw new DataDamaged([
+      "outbox.json is damaged.",
+      "I stopped so I do not overwrite it.",
+      "Fix it or rename it, then run me again.",
+    ]);
+  }
+  return loaded as OutboxItem[];
+}
+
+const config: Config = perUserObject<Config>(loadConfigFile);
+const outbox: OutboxItem[] = perUserArray<OutboxItem>(loadOutboxFile);
 
 // ---------- files ----------
 
@@ -275,10 +308,10 @@ function statusResult(): Result {
 }
 
 function doSetup(): Result {
-  const previous = config;
-  config = { enabled: true, server: config.server, topic: generateTopic() };
+  const previous: Config = { ...config };
+  Object.assign(config, { enabled: true, topic: generateTopic() });
   if (!saveConfig()) {
-    config = previous;
+    Object.assign(config, previous);
     return {
       ok: false,
       lines: ["Could not save the settings. Nothing was changed."],
@@ -302,31 +335,11 @@ function doSetup(): Result {
 export const notifyModule: Module = {
   name: "notify",
   init: () => {
-    const loadedConfig = readJsonObject(CONFIG_FILE);
-    if (loadedConfig === null || (loadedConfig !== undefined && !isConfig(loadedConfig))) {
-      return [
-        "notify.json is damaged.",
-        "I stopped so I do not overwrite it.",
-        "Fix it or rename it, then run me again.",
-      ];
-    }
-    if (loadedConfig !== undefined) {
-      config = {
-        enabled: loadedConfig.enabled as boolean,
-        server: loadedConfig.server as string,
-        topic: loadedConfig.topic as string | null,
-      };
-    }
-    const loadedOutbox = readJsonArray<unknown>(OUTBOX_FILE);
-    if (loadedOutbox === null || !loadedOutbox.every(isOutboxItem)) {
-      return [
-        "outbox.json is damaged.",
-        "I stopped so I do not overwrite it.",
-        "Fix it or rename it, then run me again.",
-      ];
-    }
-    for (const item of loadedOutbox) {
-      outbox.push(item);
+    try {
+      void config.enabled; // checks the owner's files now; other users load when they first use it
+      void outbox.length;
+    } catch (e) {
+      return damagedLines(e);
     }
     return [];
   },

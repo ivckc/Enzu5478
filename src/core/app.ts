@@ -3,6 +3,7 @@ import type { Command, Job, Module, Result } from "./types";
 import { appendLog } from "./log";
 import { setRunner, setSnapshotSource } from "./snapshot";
 import type { Outcome } from "./snapshot";
+import { LOCAL, allUsers, runAs } from "./userctx";
 
 export function startApp(modules: Module[], greeting: () => string): void {
   // 1. Let each module load its own data. Stop if something is damaged.
@@ -121,7 +122,12 @@ export function startApp(modules: Module[], greeting: () => string): void {
 
   // Shows something that was not asked for (like a reminder), without
   // breaking the line the user is typing.
-  function showByItself(result: Result): void {
+  // print = false: other users' messages are not printed in this window (only logged / sent to their phone).
+  function showByItself(result: Result, print = true): void {
+    if (!print) {
+      show(result, false);
+      return;
+    }
     if (closed || result.lines.length === 0) {
       show(result);
       return;
@@ -143,36 +149,49 @@ export function startApp(modules: Module[], greeting: () => string): void {
     };
   }
 
-  // A job that is still working (for example, waiting for the network) is not started again.
-  const busy = new Set<Job>();
+  // A job that is still working (for example, waiting for the network) is not started again
+  // (one entry per job AND user).
+  const busy = new Set<string>();
 
+  // Every job runs once for every user, "as" that user, so reminders, phone messages and the
+  // morning brief use each person's own data.
   function startJob(job: Job, atStart: boolean): void {
-    if (busy.has(job)) {
+    for (const userId of allUsers()) {
+      runJob(job, userId, atStart);
+    }
+  }
+
+  function runJob(job: Job, userId: string, atStart: boolean): void {
+    const key = `${job.name}:${userId}`;
+    if (busy.has(key)) {
       return;
     }
-    let out: Result | null | Promise<Result | null>;
-    try {
-      out = job.run();
-    } catch {
-      out = jobProblem(job);
-    }
-    if (out instanceof Promise) {
-      busy.add(job);
-      out
-        .catch(() => jobProblem(job))
-        .then((result) => {
-          busy.delete(job);
-          if (result !== null) {
-            showByItself(result);
-          }
-        });
-    } else if (out !== null) {
-      if (atStart) {
-        show(out);
-      } else {
-        showByItself(out);
+    const print = userId === LOCAL; // only the owner sees job messages in this window
+    runAs(userId, () => {
+      let out: Result | null | Promise<Result | null>;
+      try {
+        out = job.run();
+      } catch {
+        out = jobProblem(job);
       }
-    }
+      if (out instanceof Promise) {
+        busy.add(key);
+        out
+          .catch(() => jobProblem(job))
+          .then((result) => {
+            busy.delete(key);
+            if (result !== null) {
+              showByItself(result, print);
+            }
+          });
+      } else if (out !== null) {
+        if (atStart && print) {
+          show(out);
+        } else {
+          showByItself(out, print);
+        }
+      }
+    });
   }
 
   function showHelp(): void {

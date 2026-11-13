@@ -2,6 +2,7 @@ import type { Job, LogInfo, Module, Notice, Result } from "../core/types";
 import { nextIdFor, readJsonArray, saveJsonArray } from "../core/storage";
 import { splitFirst, toId } from "../core/parse";
 import { problem, say } from "../core/result";
+import { DataDamaged, currentUser, damagedLines, perUserArray } from "../core/userctx";
 
 type Reminder = {
   id: number;
@@ -16,7 +17,18 @@ const REMINDERS_FILE = "reminders.json";
 const CHECK_EVERY_MS = 10_000;
 const LATE_AFTER_MS = 90_000; // shown later than this after its time = "late"
 
-const reminders: Reminder[] = [];
+// A different list for each user (loaded from that user's own reminders.json).
+const reminders: Reminder[] = perUserArray<Reminder>(() => {
+  const loaded = readJsonArray<unknown>(REMINDERS_FILE);
+  if (loaded === null || !loaded.every(isReminder)) {
+    throw new DataDamaged([
+      "reminders.json is damaged.",
+      "I stopped so I do not overwrite it.",
+      "Fix it or rename it, then run me again.",
+    ]);
+  }
+  return loaded as Reminder[];
+});
 
 function now(): Date {
   return new Date(Date.now());
@@ -214,16 +226,10 @@ export { reminders, now, saveReminders };
 export const remindersModule: Module = {
   name: "reminders",
   init: () => {
-    const loaded = readJsonArray<unknown>(REMINDERS_FILE);
-    if (loaded === null || !loaded.every(isReminder)) {
-      return [
-        "reminders.json is damaged.",
-        "I stopped so I do not overwrite it.",
-        "Fix it or rename it, then run me again.",
-      ];
-    }
-    for (const r of loaded) {
-      reminders.push(r);
+    try {
+      void reminders.length; // checks the owner's file now; other users load when they first use it
+    } catch (e) {
+      return damagedLines(e);
     }
     return [];
   },
@@ -242,7 +248,7 @@ export const remindersModule: Module = {
         }
         const reminder: Reminder = {
           id: nextIdFor(reminders),
-          userId: "local",
+          userId: currentUser(),
           text: parsed.text,
           at: parsed.at.toISOString(),
           status: "pending",

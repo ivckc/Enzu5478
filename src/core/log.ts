@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+import { userFile } from "./userctx";
 
 export const LOG_FILE = "activity.jsonl";
 
@@ -13,7 +14,7 @@ export type LogEntry = {
 // Adds one line at the end of the file. Never changes old lines.
 export function appendLog(entry: LogEntry): boolean {
   try {
-    fs.appendFileSync(LOG_FILE, JSON.stringify(entry) + "\n", "utf8");
+    fs.appendFileSync(userFile(LOG_FILE), JSON.stringify(entry) + "\n", "utf8");
     return true;
   } catch {
     return false;
@@ -36,12 +37,13 @@ function isLogEntry(x: unknown): x is LogEntry {
 
 // Returns null only if the file exists but cannot be read.
 export function readLog(): { entries: LogEntry[]; unreadable: number } | null {
-  if (!fs.existsSync(LOG_FILE)) {
+  const file = userFile(LOG_FILE);
+  if (!fs.existsSync(file)) {
     return { entries: [], unreadable: 0 };
   }
   let text: string;
   try {
-    text = fs.readFileSync(LOG_FILE, "utf8");
+    text = fs.readFileSync(file, "utf8");
   } catch {
     return null;
   }

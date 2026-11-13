@@ -1,11 +1,9 @@
 import type { Goal, Task } from "./types";
 import { readJsonArray, saveJsonArray } from "./storage";
+import { DataDamaged, perUserArray } from "./userctx";
 
 export const TASKS_FILE = "tasks.json";
 export const GOALS_FILE = "goals.json";
-
-export const tasks: Task[] = [];
-export const goals: Goal[] = [];
 
 const LEVELS: string[] = ["urgent", "medium", "normal"];
 
@@ -18,21 +16,42 @@ function fixTask(t: Task): void {
   t.subtasks = Array.isArray(t.subtasks) ? t.subtasks : [];
 }
 
+function loadList<T>(file: string): T[] {
+  const loaded = readJsonArray<T>(file);
+  if (loaded === null) {
+    throw new DataDamaged([
+      `${file} is damaged.`,
+      "I stopped so I do not overwrite it.",
+      "Fix it or rename it, then run me again.",
+    ]);
+  }
+  return loaded;
+}
+
+// These look like normal lists, but each user has a different one
+// (loaded from that user's own files the first time they are needed).
+export const tasks: Task[] = perUserArray<Task>(() => {
+  const list = loadList<Task>(TASKS_FILE);
+  for (const task of list) {
+    fixTask(task);
+  }
+  return list;
+});
+export const goals: Goal[] = perUserArray<Goal>(() => loadList<Goal>(GOALS_FILE));
+
+// Start-up check for the owner's (terminal) data. Other users load when they first use Anzu.
 export function loadData(): void {
-  const loadedTasks = readJsonArray<Task>(TASKS_FILE);
-  const loadedGoals = readJsonArray<Goal>(GOALS_FILE);
-  if (loadedTasks === null || loadedGoals === null) {
+  try {
+    void tasks.length;
+    void goals.length;
+  } catch (e) {
     console.log("One of the data files is damaged (tasks.json or goals.json).");
     console.log("I stopped so I do not overwrite it.");
     console.log("Fix it or rename it, then run me again.");
+    if (!(e instanceof DataDamaged)) {
+      console.log(e instanceof Error ? e.message : String(e));
+    }
     process.exit(3);
-  }
-  for (const task of loadedTasks) {
-    fixTask(task);
-    tasks.push(task);
-  }
-  for (const goal of loadedGoals) {
-    goals.push(goal);
   }
 }
 
