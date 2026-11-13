@@ -57,6 +57,7 @@ const ALLOWED = [
   "autostart on", "autostart off",
   // Read-only
   "list", "goals", "reminders", "habits", "backups", "log", "notify", "autostart",
+  "brief",
 ];
 
 // A secret made fresh at every start. Only this page receives it, inside its own HTML.

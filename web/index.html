@@ -140,6 +140,7 @@ async function cmd(text,cid){let ok=false;try{const r=await fetch("/api/command"
  if(d.confirmId){ask={id:d.confirmId,text:d.lines[0]};msg=null;ok=true}else{ask=null;ok=!!d.ok;msg={ok,t:(d.lines||[]).join(" "),until:Date.now()+5000};if(ok&&/^notify (setup|show)/.test(text||""))info=d.lines;
   const m=/(task|habit|goal) (\d+)/.exec((d.lines||[])[0]||"");if(ok&&text&&m&&/^(add|habit add|goal) /.test(text)){const n=+m[2];if(m[1]=="task")selId=n;else if(m[1]=="habit")selHab=n;else selGoal=n}}}
  catch{msg={ok:false,t:"تعذّر الاتصال بأنزو",until:Date.now()+5000}}
+ if(window.AnzuRaven&&text){if(ok&&/^done /.test(text))AnzuRaven.flash("happy",2400);else if(ok&&/^habit check /.test(text))AnzuRaven.flash("proud",2400);else if(!ok&&!ask)AnzuRaven.flash("worried",1800)}
  await poll();redraw();return ok}
 function addTask(){const t=(drafts.addin||"").trim();if(!t)return;drafts.addin="";cmd("add "+t).then(ok=>{if(!ok){drafts.addin=t;redraw()}})}
 function subAdd(id){const t=(drafts.subin||"").trim();if(!t||id==null)return;drafts.subin="";cmd(`sub add ${id} ${t}`).then(ok=>{if(!ok){drafts.subin=t;redraw()}})}
@@ -206,7 +207,7 @@ function anzuView(tk,gl){const f=guard([S.activity,chat,shortcuts,gl,prefs.aut])
  $("main").innerHTML=`<p class="cap">CHAT // ANZU</p><h1>أنزو</h1>${bars()}<div class="chat" id="chatbox">${B}</div><div class="chips2">${shortcuts.map((s,i)=>`<span class="chip tb" data-b="csc" data-i="${i}">${esc(s.label)}</span>`).join("")}</div><div class="addb"><input id="chin" placeholder="اكتب أمرًا…" value="${esc(chatDraft)}"><button data-b="csend">إرسال</button></div>`;
  $("side").innerHTML=`<p class="cap">LIVE ACTIVITY</p><h1 style="font-size:20px">شنو يسوي أنزو الآن</h1>${act(6)}<p class="cap">APPROVAL</p>${agentAsk?`<div class="ask">${esc(agentAsk.text)}<br><button data-a="yes">موافق</button> <button data-a="no">لا</button></div>`:ask?`<div class="ask">${esc(ask.text.replace(" Type yes to confirm.",""))}<br><button data-a="yes">موافق</button> <button data-a="no">لا</button></div>`:"<p class='mu'>لا شيء ينتظر موافقتك.</p>"}<p class="cap">AUTONOMY</p><p>المستوى: <b>${AUT[prefs.aut]}</b></p><small class="mu">مستوى الاستقلالية مُفعّل الآن. الحذف يطلب تأكيدك دائمًا.</small><p class="cap">CONTEXT</p><div class="chips2">${gl.map(g=>`<span class="chip">${esc(g.title)}</span>`).join("")}</div>`;
  const cb=$("chatbox");if(cb)cb.scrollTop=cb.scrollHeight;back(f)}
-const ALLOWED=["add","done","reopen","link","rename task","delete task","priority","due","sub add","sub done","sub reopen","sub delete","goal","rename goal","delete goal","remind","unremind","habit add","habit check","habit uncheck","habit rename","habit note","habit delete","backup","restore","notify setup","notify show","notify test","notify on","notify off","autostart on","autostart off","list","goals","reminders","habits","backups","log","notify","autostart"];
+const ALLOWED=["add","done","reopen","link","rename task","delete task","priority","due","sub add","sub done","sub reopen","sub delete","goal","rename goal","delete goal","remind","unremind","habit add","habit check","habit uncheck","habit rename","habit note","habit delete","backup","restore","notify setup","notify show","notify test","notify on","notify off","autostart on","autostart off","list","goals","reminders","habits","backups","log","notify","autostart","brief"];
 function isKnownCommand(t){const a=t.replace(/^ask\s+/i,"").trim();return ALLOWED.some(n=>a===n||a.startsWith(n+" "))}
 // Session memory: the last ~10 messages of THIS page session, kept in memory only (never on disk).
 let sessionMsgs=[];
@@ -217,7 +218,7 @@ let agentAsk=null,agentBusy=false;
 function agentState(){return agentBusy||agentAsk?"think":null}
 async function agentCall(payload){try{const res=await fetch("/api/agent",{method:"POST",headers:{"Content-Type":"application/json","X-Anzu-Token":TOKEN},body:JSON.stringify(payload)});const d=await res.json();
  if(d.wait&&d.confirmId){agentAsk={id:d.confirmId,text:d.ask||(d.lines||[]).join(" ")};agentThink=true;redraw();return}
- const lines=d.lines||[];chat.push({w:"a",lines:lines.length?lines:[d.reply||""]});remember("agent",lines.join(" "));agentThink=false;redraw();return}
+ let lines=d.lines||[];if(window.AnzuRaven){const c=AnzuRaven.react(lines.length?lines.join("\n"):(d.reply||""));lines=c?c.split("\n"):[]}chat.push({w:"a",lines:lines.length?lines:[d.reply||""]});remember("agent",lines.join(" "));agentThink=false;redraw();return}
  catch{chat.push({w:"a",t:"تعذّر الاتصال بأنزو",time:nowT()})}}
 async function chatAgent(text){agentBusy=true;agentThink=true;redraw();
  await agentCall({text,history:sessionMsgs.map(m=>({role:m.role,text:m.text}))});
@@ -252,14 +253,26 @@ function goalsView(tk,gl){const f=guard([S.tasks,S.goals,selGoal,drafts.gin]);if
   s=`<p class="cap">DETAILS</p><h1 style="font-size:20px">${esc(g.title)}</h1><p class="mu">${x.d} من ${x.k.length} مهام منجزة</p>${ring(x.p)}<p class="cap">LINKED TASKS</p>`+(x.k.map(t=>`<div class="sr"><span class="sq ${t.done?"on":""}" data-b="gtog" data-id="${t.id}" data-on="${t.done?1:0}"></span><span class="${t.done?"dn":""}">${esc(t.title)}</span></div>`).join("")||"<p class='mu'>لا مهام مرتبطة.</p>")
   +`<label>ربط مهمة<select id="gl"><option value="">—</option>${free.map(t=>`<option value="${t.id}">${esc(t.title)}</option>`).join("")}</select></label><div class="btns"><button data-b="glink" data-id="${g.id}">ربط</button></div><p class="cap">EDIT</p><label>العنوان<input id="gn" value="${esc(drafts.gn??g.title)}"></label><div class="btns"><button data-b="gren" data-id="${g.id}">حفظ العنوان</button><button class="dng" data-b="gdel" data-id="${g.id}">حذف الهدف</button></div><small class="mu">حذف الهدف لا يحذف مهامه.</small>`}
  $("side").innerHTML=s;back(f)}
-function settingsView(tk,gl){const f=guard([S.notify,S.backup,S.autostart,prefs,shortcuts,persona,offline]);if(f===null)return;const n=S.notify||{},bk=S.backup||[],au=S.autostart||{};const nm=localStorage.getItem("name")||"عبود";
+const BDAYS=["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+function briefBox(br,ok){
+ if(!br)return `<p class="cap">MORNING BRIEF</p><p class="mu">ملخص الصباح غير متاح: موديول brief ما اشتغل. تأكد إنك ضفته للمشروع وسوّيت إعادة تشغيل.</p>`;
+ return `<p class="cap">MORNING BRIEF</p><div class="row"><span>ملخص الصباح على الهاتف: <b>${br.enabled?"مفعّل":"متوقف"}</b></span><span class="tgl ${br.enabled?"on":""}" data-b="brtog"><i></i></span></div>`
+ +(ok?"":`<div class="msg bad">إشعارات الهاتف مو مفعّلة والملخص يوصل عن طريقها. فعّلها من قسم PHONE فوق.</div>`)
+ +`<div class="row"><span>الساعة</span><span><input type="time" id="brt" value="${esc(drafts.brt??br.time)}"> <button data-b="brtime">حفظ</button></span></div>`
+ +`<div class="row"><span>الأيام</span></div><div class="chips2">${BDAYS.map((d,i)=>`<span class="chip tb ${br.days.includes(i)?"on":""}" data-b="brday" data-i="${i}">${d}</span>`).join("")}</div>`
+ +`<div class="btns wrap"><button data-b="brtest">إرسال تجربة الآن</button></div><small class="mu">المنطقة الزمنية: ${esc(br.tz)}. يرسل مرة باليوم بالساعة والأيام اللي تختارها.</small>`}
+function ravenBox(){
+ if(!window.AnzuRaven)return"";
+ const on=AnzuRaven.isLife();
+ return `<p class="cap">RAVEN</p><div class="row"><span>حركة الغراب: <b>${on?"حيّ (يتحرك ويتفاعل)":"ثابت"}</b></span><span class="tgl ${on?"on":""}" data-b="ravlife"><i></i></span></div><div class="row"><span>جرّب مشاعره (تشوفها بالغراب فوق)</span></div><div class="chips2">${AnzuRaven.emotions.map(e=>`<span class="chip tb" data-b="ravemo" data-i="${e.name}">${e.label}</span>`).join("")}</div>`}
+function settingsView(tk,gl){const f=guard([S.notify,S.backup,S.autostart,S.brief,window.AnzuRaven&&AnzuRaven.isLife(),prefs,shortcuts,persona,offline]);if(f===null)return;const n=S.notify||{},bk=S.backup||[],au=S.autostart||{},br=S.brief,brOk=!!(n.ready&&n.enabled);const nm=localStorage.getItem("name")||"عبود";
  const opt=(a,i,n2)=>`<span class="opt ${a?"on":""}" data-b="${n2}" data-i="${i}">${AUT[i]}</span>`,tg=(on,i)=>`<span class="tgl ${on?"on":""}" data-b="ap" data-i="${i}"><i></i></span>`;
  const ap=["يطلب موافقتي قبل إرسال أي رسالة","يطلب موافقتي قبل تعديل المهام المهمة","يطلب موافقتي قبل حذف أي ذاكرة"];
  $("main").innerHTML=`<p class="cap">SETTINGS</p><h1>الإعدادات</h1>${bars()}
  <p class="cap">AUTONOMY</p><p>كم تريد أنزو يتصرف من نفسه؟ <small class="mu">(المستوى مُفعّل الآن مع الذكاء الاصطناعي. حذف أي شيء يطلب تأكيدك دائمًا.)</small></p><div class="opts">${AUT.map((_,i)=>opt(prefs.aut==i,i,"aut")).join("")}</div>
  <p class="cap">APPROVALS</p>${ap.map((t,i)=>`<div class="row"><span>${t}</span>${tg(prefs.ap[i],i)}</div>`).join("")}
  <p class="cap">PHONE</p><div class="row"><span>إشعارات الهاتف: <b>${n.ready?(n.enabled?"مفعّلة":"متوقفة"):"غير مُعدّة"}</b>${n.topic?` · الموضوع ${esc(n.topic)}`:""} · منتظر ${n.waiting??0}${n.problem?` · مشكلة: ${esc(n.problem)}`:""}</span></div><div class="btns wrap"><button data-b="run" data-c="notify setup">${n.ready?"موضوع جديد":"إعداد الهاتف"}</button>${n.ready?`<button data-b="run" data-c="${n.enabled?"notify off":"notify on"}">${n.enabled?"إيقاف":"تشغيل"}</button><button data-b="run" data-c="notify show">إظهار الموضوع</button><button data-b="run" data-c="notify test">إرسال تجربة</button>`:""}</div>
- <p class="cap">BACKUP</p><div class="btns wrap"><button data-b="run" data-c="backup">نسخة احتياطية الآن</button></div>${bk.map(b=>`<div class="row"><span><span dir="ltr">${esc(b.name)}</span> <small class="mu">${esc(b.info)}</small></span><button data-b="run" data-c="restore ${esc(b.name)}">استرجاع</button></div>`).join("")||"<p class='mu'>لا نسخ بعد.</p>"}<small class="mu">النسخة تشمل المهام والأهداف فقط. للتذكيرات والعادات استعمل «تصدير بياناتي».</small>
+ ${briefBox(br,brOk)}${ravenBox()}<p class="cap">BACKUP</p><div class="btns wrap"><button data-b="run" data-c="backup">نسخة احتياطية الآن</button></div>${bk.map(b=>`<div class="row"><span><span dir="ltr">${esc(b.name)}</span> <small class="mu">${esc(b.info)}</small></span><button data-b="run" data-c="restore ${esc(b.name)}">استرجاع</button></div>`).join("")||"<p class='mu'>لا نسخ بعد.</p>"}<small class="mu">النسخة تشمل المهام والأهداف فقط. للتذكيرات والعادات استعمل «تصدير بياناتي».</small>
  <p class="cap">AUTOSTART</p><div class="row"><span>التشغيل مع ويندوز: <b>${au.supported?(au.on?"مفعّل":"متوقف"):"غير متاح"}</b></span>${au.supported?`<button data-b="run" data-c="${au.on?"autostart off":"autostart on"}">${au.on?"إيقاف":"تشغيل"}</button>`:""}</div>
  <p class="cap">SHORTCUTS</p>${shortcuts.map((s,i)=>`<div class="row"><span>${esc(s.label)} <small class="mu">${esc(s.cmd)}</small></span><button data-b="shdel" data-i="${i}">حذف</button></div>`).join("")||"<p class='mu'>لا اختصارات. تظهر في الرئيسية وأنزو.</p>"}<div class="addb"><input id="sl" placeholder="الاسم"><input id="sc" placeholder="الأمر، مثل: list"><button data-b="shadd">إضافة</button></div>
  <p class="cap">VOICE</p><div class="row"><span>الرد بصوت عالي</span><span class="tgl"><i></i></span></div><div class="row"><span>لغة التعرّف على الصوت</span><span class="chip">قريبًا</span></div>
@@ -298,6 +311,12 @@ document.addEventListener("click",e=>{const el=e.target.closest("[data-b]");if(!
  else if(b=="nclr"){chat=[];SV("chat",chat);msg={ok:true,t:"تم مسح المحادثات",until:Date.now()+4000};redraw()}
  else if(b=="radd"){const rd=$("rd").value,rt=$("rtm").value;if(rd&&rt)remAdd(`${rd} ${rt}`);else if(rt)remAdd(`at ${rt}`);else{msg={ok:false,t:"اختر الساعة (والتاريخ إن أردت)",until:Date.now()+4000};redraw()}}
  else if(b=="rq")remAdd(d.w)
+ else if(b=="ravlife"){AnzuRaven.life(!AnzuRaven.isLife());redraw()}
+ else if(b=="ravemo")AnzuRaven.flash(d.i,4200)
+ else if(b=="brtog")cmd(`brief ${(S.brief||{}).enabled?"off":"on"}`)
+ else if(b=="brtime"){const v=($("brt")||{}).value;if(v)cmd(`brief time ${v}`).then(()=>{drafts.brt=undefined});else{msg={ok:false,t:"اختر الساعة أولاً",until:Date.now()+4000};redraw()}}
+ else if(b=="brday"){const cur=new Set((S.brief||{}).days||[]),i=+d.i;if(cur.has(i))cur.delete(i);else cur.add(i);if(!cur.size){msg={ok:false,t:"اختر يوماً واحداً على الأقل",until:Date.now()+4000};redraw()}else cmd(`brief days ${[...cur].sort((x,y)=>x-y).join(",")}`)}
+ else if(b=="brtest")cmd("brief test")
  else if(b=="rcancel")cmd(`unremind ${id}`)});
 function draw(){if(!S)return;const slot=view=="home"?$("hr"):$("sr");if($("raven").parentNode!==slot)slot.appendChild($("raven"));nav();document.body.className=view=="home"?"home":(["tasks","habits","anzu"].includes(view)?"v-voice":"");
  const tk=S.tasks,gl=S.goals,rm=(S.reminders||[]).filter(r=>r.status=="pending");let m="",s="";

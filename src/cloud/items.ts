@@ -17,7 +17,7 @@ function parseBody(body: unknown): string | null {
 // Every query below filters by user_id taken from the verified JWT, never from the client.
 
 itemsRouter.get("/:kind", (req: AuthedRequest, res: Response) => {
-  if (!kindOk(req.params.kind)) return res.status(404).json({ error: "unknown kind" });
+  if (!kindOk(String(req.params.kind))) return res.status(404).json({ error: "unknown kind" });
   const rows = db
     .prepare("SELECT id, data, created_at, updated_at FROM items WHERE user_id = ? AND kind = ? ORDER BY created_at DESC")
     .all(req.userId, req.params.kind) as any[];
@@ -25,7 +25,7 @@ itemsRouter.get("/:kind", (req: AuthedRequest, res: Response) => {
 });
 
 itemsRouter.post("/:kind", (req: AuthedRequest, res: Response) => {
-  if (!kindOk(req.params.kind)) return res.status(404).json({ error: "unknown kind" });
+  if (!kindOk(String(req.params.kind))) return res.status(404).json({ error: "unknown kind" });
   const data = parseBody(req.body);
   if (!data) return res.status(400).json({ error: "invalid body" });
   const id = randomUUID();
@@ -36,7 +36,7 @@ itemsRouter.post("/:kind", (req: AuthedRequest, res: Response) => {
 });
 
 itemsRouter.put("/:kind/:id", (req: AuthedRequest, res: Response) => {
-  if (!kindOk(req.params.kind)) return res.status(404).json({ error: "unknown kind" });
+  if (!kindOk(String(req.params.kind))) return res.status(404).json({ error: "unknown kind" });
   const data = parseBody(req.body);
   if (!data) return res.status(400).json({ error: "invalid body" });
   const r = db
@@ -48,7 +48,7 @@ itemsRouter.put("/:kind/:id", (req: AuthedRequest, res: Response) => {
 
 // The UI must ask the user to confirm BEFORE calling this.
 itemsRouter.delete("/:kind/:id", (req: AuthedRequest, res: Response) => {
-  if (!kindOk(req.params.kind)) return res.status(404).json({ error: "unknown kind" });
+  if (!kindOk(String(req.params.kind))) return res.status(404).json({ error: "unknown kind" });
   const r = db
     .prepare("DELETE FROM items WHERE id = ? AND user_id = ? AND kind = ?")
     .run(req.params.id, req.userId, req.params.kind);
