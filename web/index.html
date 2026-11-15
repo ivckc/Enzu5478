@@ -207,7 +207,7 @@ function anzuView(tk,gl){const f=guard([S.activity,chat,shortcuts,gl,prefs.aut])
  $("main").innerHTML=`<p class="cap">CHAT // ANZU</p><h1>أنزو</h1>${bars()}<div class="chat" id="chatbox">${B}</div><div class="chips2">${shortcuts.map((s,i)=>`<span class="chip tb" data-b="csc" data-i="${i}">${esc(s.label)}</span>`).join("")}</div><div class="addb"><input id="chin" placeholder="اكتب أمرًا…" value="${esc(chatDraft)}"><button data-b="csend">إرسال</button></div>`;
  $("side").innerHTML=`<p class="cap">LIVE ACTIVITY</p><h1 style="font-size:20px">شنو يسوي أنزو الآن</h1>${act(6)}<p class="cap">APPROVAL</p>${agentAsk?`<div class="ask">${esc(agentAsk.text)}<br><button data-a="yes">موافق</button> <button data-a="no">لا</button></div>`:ask?`<div class="ask">${esc(ask.text.replace(" Type yes to confirm.",""))}<br><button data-a="yes">موافق</button> <button data-a="no">لا</button></div>`:"<p class='mu'>لا شيء ينتظر موافقتك.</p>"}<p class="cap">AUTONOMY</p><p>المستوى: <b>${AUT[prefs.aut]}</b></p><small class="mu">مستوى الاستقلالية مُفعّل الآن. الحذف يطلب تأكيدك دائمًا.</small><p class="cap">CONTEXT</p><div class="chips2">${gl.map(g=>`<span class="chip">${esc(g.title)}</span>`).join("")}</div>`;
  const cb=$("chatbox");if(cb)cb.scrollTop=cb.scrollHeight;back(f)}
-const ALLOWED=["add","done","reopen","link","rename task","delete task","priority","due","sub add","sub done","sub reopen","sub delete","goal","rename goal","delete goal","remind","unremind","habit add","habit check","habit uncheck","habit rename","habit note","habit delete","backup","restore","notify setup","notify show","notify test","notify on","notify off","autostart on","autostart off","list","goals","reminders","habits","backups","log","notify","autostart","brief"];
+const ALLOWED=["add","done","reopen","link","rename task","delete task","priority","due","sub add","sub done","sub reopen","sub delete","goal","rename goal","delete goal","remind","unremind","habit add","habit check","habit uncheck","habit rename","habit note","habit delete","backup","restore","notify setup","notify show","notify test","notify on","notify off","autostart on","autostart off","list","goals","reminders","habits","backups","log","notify","autostart","brief","weekly","evening","inbox"];
 function isKnownCommand(t){const a=t.replace(/^ask\s+/i,"").trim();return ALLOWED.some(n=>a===n||a.startsWith(n+" "))}
 // Session memory: the last ~10 messages of THIS page session, kept in memory only (never on disk).
 let sessionMsgs=[];
@@ -261,18 +261,33 @@ function briefBox(br,ok){
  +`<div class="row"><span>الساعة</span><span><input type="time" id="brt" value="${esc(drafts.brt??br.time)}"> <button data-b="brtime">حفظ</button></span></div>`
  +`<div class="row"><span>الأيام</span></div><div class="chips2">${BDAYS.map((d,i)=>`<span class="chip tb ${br.days.includes(i)?"on":""}" data-b="brday" data-i="${i}">${d}</span>`).join("")}</div>`
  +`<div class="btns wrap"><button data-b="brtest">إرسال تجربة الآن</button></div><small class="mu">المنطقة الزمنية: ${esc(br.tz)}. يرسل مرة باليوم بالساعة والأيام اللي تختارها.</small>`}
+function notifBox(){
+ if(!window.AnzuInbox)return"";
+ const p=AnzuInbox.prefs();
+ const row=(label,key)=>`<div class="row"><span>${label}</span><span class="tgl ${p[key]?"on":""}" data-b="inpref" data-i="${key}"><i></i></span></div>`;
+ return`<p class="cap">NOTIFICATIONS</p><p class="mu">إشعارات أنزو نفسه (مو ntfy). هذي الإعدادات لهذا الجهاز بس، والجوال له إعدادات منفصلة.</p>${row("إشعار منبثق داخل الصفحة","toast")}${row("صوت","sound")}${row("اهتزاز (على الجوال)","vibe")}${row("إشعار النظام لما الصفحة تكون مخفية (يحتاج إذن المتصفح)","os")}<div class="btns wrap"><button data-b="inopen">فتح صندوق الإشعارات</button><button data-b="intest">إرسال إشعار تجريبي</button></div>`}
+function weeklyBox(w,ok){
+ if(!w)return`<p class="cap">WEEKLY REPORT</p><p class="mu">التقرير الأسبوعي غير متاح: موديول weekly ما اشتغل. تأكد إنك ضفته للمشروع وسوّيت إعادة تشغيل.</p>`;
+ return`<p class="cap">WEEKLY REPORT</p><div class="row"><span>التقرير الأسبوعي على الهاتف: <b>${w.weeklyOn?"مفعّل":"متوقف"}</b></span><span class="tgl ${w.weeklyOn?"on":""}" data-b="wtog"><i></i></span></div>`
+ +(ok?"":`<div class="msg bad">إشعارات الهاتف مو مفعّلة والتقرير يوصل عن طريقها. فعّلها من قسم PHONE فوق.</div>`)
+ +`<div class="row"><span>اليوم</span></div><div class="chips2">${BDAYS.map((d,i)=>`<span class="chip tb ${w.weeklyDay===i?"on":""}" data-b="wday" data-i="${i}">${d}</span>`).join("")}</div>`
+ +`<div class="row"><span>الساعة</span><span><input type="time" id="wkt" value="${esc(drafts.wkt??w.weeklyTime)}"> <button data-b="wtime">حفظ</button></span></div>`
+ +`<div class="btns wrap"><button data-b="wtest">إرسال تجربة التقرير الآن</button></div>`
+ +`<p class="cap">EVENING NUDGE</p><div class="row"><span>تذكير مسائي بالعادات: <b>${w.eveningOn?"مفعّل":"متوقف"}</b></span><span class="tgl ${w.eveningOn?"on":""}" data-b="etog"><i></i></span></div>`
+ +`<div class="row"><span>الساعة</span><span><input type="time" id="evt" value="${esc(drafts.evt??w.eveningTime)}"> <button data-b="etime">حفظ</button></span></div>`
+ +`<div class="btns wrap"><button data-b="etest">إرسال تجربة التذكير</button></div><small class="mu">التذكير المسائي يوصل بس إذا لسه عندك عادات ما سجلتها أو مهام اليوم ما خلصت. المنطقة الزمنية: ${esc(w.tz)}.</small>`}
 function ravenBox(){
  if(!window.AnzuRaven)return"";
  const on=AnzuRaven.isLife();
  return `<p class="cap">RAVEN</p><div class="row"><span>حركة الغراب: <b>${on?"حيّ (يتحرك ويتفاعل)":"ثابت"}</b></span><span class="tgl ${on?"on":""}" data-b="ravlife"><i></i></span></div><div class="row"><span>جرّب مشاعره (تشوفها بالغراب فوق)</span></div><div class="chips2">${AnzuRaven.emotions.map(e=>`<span class="chip tb" data-b="ravemo" data-i="${e.name}">${e.label}</span>`).join("")}</div>`}
-function settingsView(tk,gl){const f=guard([S.notify,S.backup,S.autostart,S.brief,window.AnzuRaven&&AnzuRaven.isLife(),prefs,shortcuts,persona,offline]);if(f===null)return;const n=S.notify||{},bk=S.backup||[],au=S.autostart||{},br=S.brief,brOk=!!(n.ready&&n.enabled);const nm=localStorage.getItem("name")||"عبود";
+function settingsView(tk,gl){const f=guard([S.notify,S.backup,S.autostart,S.brief,S.weekly,window.AnzuRaven&&AnzuRaven.isLife(),window.AnzuInbox&&JSON.stringify(AnzuInbox.prefs()),prefs,shortcuts,persona,offline]);if(f===null)return;const n=S.notify||{},bk=S.backup||[],au=S.autostart||{},br=S.brief,wk=S.weekly,brOk=!!(n.ready&&n.enabled);const nm=localStorage.getItem("name")||"عبود";
  const opt=(a,i,n2)=>`<span class="opt ${a?"on":""}" data-b="${n2}" data-i="${i}">${AUT[i]}</span>`,tg=(on,i)=>`<span class="tgl ${on?"on":""}" data-b="ap" data-i="${i}"><i></i></span>`;
  const ap=["يطلب موافقتي قبل إرسال أي رسالة","يطلب موافقتي قبل تعديل المهام المهمة","يطلب موافقتي قبل حذف أي ذاكرة"];
  $("main").innerHTML=`<p class="cap">SETTINGS</p><h1>الإعدادات</h1>${bars()}
  <p class="cap">AUTONOMY</p><p>كم تريد أنزو يتصرف من نفسه؟ <small class="mu">(المستوى مُفعّل الآن مع الذكاء الاصطناعي. حذف أي شيء يطلب تأكيدك دائمًا.)</small></p><div class="opts">${AUT.map((_,i)=>opt(prefs.aut==i,i,"aut")).join("")}</div>
  <p class="cap">APPROVALS</p>${ap.map((t,i)=>`<div class="row"><span>${t}</span>${tg(prefs.ap[i],i)}</div>`).join("")}
  <p class="cap">PHONE</p><div class="row"><span>إشعارات الهاتف: <b>${n.ready?(n.enabled?"مفعّلة":"متوقفة"):"غير مُعدّة"}</b>${n.topic?` · الموضوع ${esc(n.topic)}`:""} · منتظر ${n.waiting??0}${n.problem?` · مشكلة: ${esc(n.problem)}`:""}</span></div><div class="btns wrap"><button data-b="run" data-c="notify setup">${n.ready?"موضوع جديد":"إعداد الهاتف"}</button>${n.ready?`<button data-b="run" data-c="${n.enabled?"notify off":"notify on"}">${n.enabled?"إيقاف":"تشغيل"}</button><button data-b="run" data-c="notify show">إظهار الموضوع</button><button data-b="run" data-c="notify test">إرسال تجربة</button>`:""}</div>
- ${briefBox(br,brOk)}${ravenBox()}<p class="cap">BACKUP</p><div class="btns wrap"><button data-b="run" data-c="backup">نسخة احتياطية الآن</button></div>${bk.map(b=>`<div class="row"><span><span dir="ltr">${esc(b.name)}</span> <small class="mu">${esc(b.info)}</small></span><button data-b="run" data-c="restore ${esc(b.name)}">استرجاع</button></div>`).join("")||"<p class='mu'>لا نسخ بعد.</p>"}<small class="mu">النسخة تشمل المهام والأهداف فقط. للتذكيرات والعادات استعمل «تصدير بياناتي».</small>
+ ${briefBox(br,brOk)}${weeklyBox(wk,brOk)}${notifBox()}${ravenBox()}<p class="cap">BACKUP</p><div class="btns wrap"><button data-b="run" data-c="backup">نسخة احتياطية الآن</button></div>${bk.map(b=>`<div class="row"><span><span dir="ltr">${esc(b.name)}</span> <small class="mu">${esc(b.info)}</small></span><button data-b="run" data-c="restore ${esc(b.name)}">استرجاع</button></div>`).join("")||"<p class='mu'>لا نسخ بعد.</p>"}<small class="mu">النسخة تشمل المهام والأهداف فقط. للتذكيرات والعادات استعمل «تصدير بياناتي».</small>
  <p class="cap">AUTOSTART</p><div class="row"><span>التشغيل مع ويندوز: <b>${au.supported?(au.on?"مفعّل":"متوقف"):"غير متاح"}</b></span>${au.supported?`<button data-b="run" data-c="${au.on?"autostart off":"autostart on"}">${au.on?"إيقاف":"تشغيل"}</button>`:""}</div>
  <p class="cap">SHORTCUTS</p>${shortcuts.map((s,i)=>`<div class="row"><span>${esc(s.label)} <small class="mu">${esc(s.cmd)}</small></span><button data-b="shdel" data-i="${i}">حذف</button></div>`).join("")||"<p class='mu'>لا اختصارات. تظهر في الرئيسية وأنزو.</p>"}<div class="addb"><input id="sl" placeholder="الاسم"><input id="sc" placeholder="الأمر، مثل: list"><button data-b="shadd">إضافة</button></div>
  <p class="cap">VOICE</p><div class="row"><span>الرد بصوت عالي</span><span class="tgl"><i></i></span></div><div class="row"><span>لغة التعرّف على الصوت</span><span class="chip">قريبًا</span></div>
@@ -311,6 +326,16 @@ document.addEventListener("click",e=>{const el=e.target.closest("[data-b]");if(!
  else if(b=="nclr"){chat=[];SV("chat",chat);msg={ok:true,t:"تم مسح المحادثات",until:Date.now()+4000};redraw()}
  else if(b=="radd"){const rd=$("rd").value,rt=$("rtm").value;if(rd&&rt)remAdd(`${rd} ${rt}`);else if(rt)remAdd(`at ${rt}`);else{msg={ok:false,t:"اختر الساعة (والتاريخ إن أردت)",until:Date.now()+4000};redraw()}}
  else if(b=="rq")remAdd(d.w)
+ else if(b=="inpref"){AnzuInbox.setPref(d.i,!AnzuInbox.prefs()[d.i]).then(()=>redraw())}
+ else if(b=="inopen")AnzuInbox.open()
+ else if(b=="intest")AnzuInbox.test()
+ else if(b=="wtog")cmd(`weekly ${(S.weekly||{}).weeklyOn?"off":"on"}`)
+ else if(b=="wday")cmd(`weekly day ${d.i}`)
+ else if(b=="wtime"){const v=($("wkt")||{}).value;if(v)cmd(`weekly time ${v}`).then(()=>{drafts.wkt=undefined});else{msg={ok:false,t:"اختر الساعة أولاً",until:Date.now()+4000};redraw()}}
+ else if(b=="wtest")cmd("weekly test")
+ else if(b=="etog")cmd(`evening ${(S.weekly||{}).eveningOn?"off":"on"}`)
+ else if(b=="etime"){const v=($("evt")||{}).value;if(v)cmd(`evening time ${v}`).then(()=>{drafts.evt=undefined});else{msg={ok:false,t:"اختر الساعة أولاً",until:Date.now()+4000};redraw()}}
+ else if(b=="etest")cmd("evening test")
  else if(b=="ravlife"){AnzuRaven.life(!AnzuRaven.isLife());redraw()}
  else if(b=="ravemo")AnzuRaven.flash(d.i,4200)
  else if(b=="brtog")cmd(`brief ${(S.brief||{}).enabled?"off":"on"}`)
@@ -336,7 +361,7 @@ function draw(){if(!S)return;const slot=view=="home"?$("hr"):$("sr");if($("raven
  if(view=="tasks"||view=="goals"){const p=tk.length?Math.round(100*tk.filter(t=>t.done).length/tk.length):0;s=`<p class="cap">PROGRESS</p><h1>الإنجاز</h1>${ring(p)}`;}
  s+=`<p class="cap">LIVE ACTIVITY</p><h1 style="font-size:20px">شنو يسوي أنزو الآن</h1>`+((S.activity||[]).slice().reverse().map(a=>`<div class="act ${a.ok?"":"bad"}"><b>${esc(a.action)}</b> ${esc(a.detail)}<small>${fmt(a.time)} · ${a.actor=="anzu"?"أنزو":"أنت"}</small></div>`).join("")||"<p>لا نشاط بعد.</p>");
  $("main").innerHTML=m;$("side").innerHTML=s;}
-async function poll(){try{S=await (await fetch("/api/state")).json();offline=false;const A=S.activity||[],k=A.length?A[A.length-1].time+A[A.length-1].action:"";
+async function poll(){try{S=await (await fetch("/api/state")).json();offline=false;if(window.AnzuInbox)AnzuInbox.update(S);const A=S.activity||[],k=A.length?A[A.length-1].time+A[A.length-1].action:"";
  if(seenKey!==null&&k!==seenKey){const i=A.findIndex(a=>a.time+a.action===seenKey),f=i<0?A:A.slice(i+1),r=f.filter(a=>a.action=="reminder.fire").pop();
   if(r){alertUntil=Date.now()+10000;fired=r.detail.replace(/^#\d+\s*/,"")}else if(f.some(a=>a.ok&&a.actor=="anzu"))okUntil=Date.now()+1600}
  seenKey=k;draw();}catch{offline=true;draw()}}
@@ -344,6 +369,7 @@ function hash(){if(document.activeElement)document.activeElement.blur();lastSig=
 </script>
 <script src="/anzu-raven.js"></script>
 <script src="/anzu-ui.js"></script>
+<script src="/anzu-inbox.js"></script>
 <script src="/anzu-voice.js"></script>
 <script>
 const anzuState = () => fetch("/api/state").then(r => r.json());
@@ -362,4 +388,3 @@ AnzuUI.init({
 AnzuVoice.init({ ui: AnzuUI, root: "#home-view" });
 </script>
 </body></html>
-

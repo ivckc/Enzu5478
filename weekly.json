@@ -1,0 +1,10 @@
+{
+  "weeklyOn": true,
+  "weeklyDay": 5,
+  "weeklyTime": "09:00",
+  "weeklyLast": null,
+  "eveningOn": false,
+  "eveningTime": "21:00",
+  "eveningLast": null,
+  "tz": "Asia/Baghdad"
+}

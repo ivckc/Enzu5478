@@ -16,6 +16,8 @@ import { tasksModule } from "./modules/tasks";
 import { goalsModule } from "./modules/goals";
 import { remindersModule } from "./modules/reminders";
 import { notifyModule } from "./modules/notify";
+import { inboxModule } from "./modules/inbox";
+import { weeklyModule } from "./modules/weekly";
 import { briefModule } from "./modules/brief";
 import { autostartModule } from "./modules/autostart";
 import { systemModule } from "./modules/system";
@@ -43,7 +45,9 @@ startApp(
     goalsModule,
     remindersModule,
     notifyModule,
+    inboxModule,
     briefModule,
+    weeklyModule,
     autostartModule,
     systemModule,
     backupModule,

@@ -394,6 +394,7 @@
         ['tasks', 'المهام', '<rect x="2.5" y="2.5" width="11" height="11"/><path d="m5.2 8.2 2 2 3.6-4"/>'],
         ['habits', 'العادات', '<path d="M3 8a5 5 0 0 1 8.7-3.3L13 6M13 8a5 5 0 0 1-8.7 3.3L3 10M13 3v3h-3M3 13v-3h3"/>'],
         ['goals', 'الأهداف', '<circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2.5"/>'],
+        ['inbox', 'الإشعارات', '<path d="M8 2.2a3.8 3.8 0 0 0-3.8 3.8v2.6L3 10.6V12h10v-1.4l-1.2-2V6A3.8 3.8 0 0 0 8 2.2zM6.5 13.4a1.6 1.6 0 0 0 3 0"/>'],
         ['settings', 'الإعدادات', '<circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v2M8 12.2v2M1.8 8h2M12.2 8h2M3.6 3.6 5 5M11 11l1.4 1.4M3.6 12.4 5 11M11 5l1.4-1.4"/>']
       ];
       var nav = document.createElement('nav');
@@ -416,6 +417,8 @@
           return;
         }
         var id = b.dataset.id;
+        /* the bell opens the notification panel (anzu-inbox.js); it is not a page */
+        if (id === 'inbox') { if (global.AnzuInbox) global.AnzuInbox.toggle(); return; }
         /* shell mode: the sidebar opens the REAL pages (the page decides how) */
         if (S.cfg.shell && S.cfg.onNavigate) {
           var app = document.querySelector('.app');
