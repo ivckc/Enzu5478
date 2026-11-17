@@ -20,6 +20,7 @@ import { inboxModule } from "./modules/inbox";
 import { weeklyModule } from "./modules/weekly";
 import { briefModule } from "./modules/brief";
 import { autostartModule } from "./modules/autostart";
+import { healthModule } from "./modules/health";
 import { systemModule } from "./modules/system";
 import { backupModule } from "./modules/backup";
 import { habitsModule } from "./modules/habits";
@@ -50,6 +51,7 @@ startApp(
     weeklyModule,
     autostartModule,
     systemModule,
+    healthModule,
     backupModule,
     activityModule,
     habitsModule,

@@ -6,6 +6,8 @@
 //  4) optional conversation history (so voice chat has memory)
 //  5) it is told clearly to ACT through tools, not just describe
 //  6) optional voice mode: short spoken-style answers
+//  7) router: only the tool groups related to the request are sent (saves tokens)
+//  8) workshop: picks a fast/heavy model per request and falls back if one hits its limit
 
 import { getTool, listTools, registerTool } from './tools/registry';
 import type { Tool } from './tools/types';
@@ -25,7 +27,9 @@ import { loadConfig } from './config';
 import { requestConfirmation } from './confirmation';
 import type { ConfirmFn } from './confirmation';
 import { appendLog } from '../core/log';
-import { OpenAICompatibleProvider } from './llm/openai';
+import { pickGroups } from './router';
+import type { ToolGroup } from './router';
+import { workshopChat, pickRole } from './llm/workshop';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -144,9 +148,24 @@ function ensureToolsRegistered(): void {
   toolsRegistered = true;
 }
 
-function buildToolsSchema() {
+// Which tool names belong to which group (used by the router)
+const TOOL_GROUPS: Record<ToolGroup, string[]> = {
+  tasks: [
+    taskListTool, taskAddTool, taskDoneTool, taskReopenTool,
+    taskRenameTool, taskPriorityTool, taskDueTool, taskLinkTool, taskDeleteTool,
+  ].map((t) => t.name),
+  goals: [goalListTool, goalAddTool, goalRenameTool, goalDeleteTool].map((t) => t.name),
+  habits: [
+    habitListTool, habitAddTool, habitCheckTool, habitUncheckTool,
+    habitRenameTool, habitDeleteTool,
+  ].map((t) => t.name),
+  reminders: [reminderListTool, reminderAddTool, reminderCancelTool].map((t) => t.name),
+};
+
+function buildToolsSchema(only?: string[]) {
   ensureToolsRegistered();
   return listTools()
+    .filter((name) => !only || only.includes(name))
     .map((name) => {
       const r = getTool(name);
       if (!r.ok || !r.tool) return null;
@@ -249,9 +268,14 @@ export async function runAgentLoop(
   }
 
   ensureToolsRegistered();
-  const toolsSchema = buildToolsSchema();
-  const provider = new OpenAICompatibleProvider('anzu-llm');
+
+  // Router: send only the tool groups related to this request (no LLM call, zero tokens)
+  const groups = pickGroups(input);
+  const allowed = groups === 'all' ? undefined : groups.flatMap((g) => TOOL_GROUPS[g]);
+  const toolsSchema = buildToolsSchema(allowed);
+
   const lang = detectLanguage(input);
+  const role = pickRole(input); // 'fast' or 'heavy' model
 
   const system =
     (lang === 'ar' ? SYSTEM_PROMPT_AR : SYSTEM_PROMPT) +
@@ -270,15 +294,22 @@ export async function runAgentLoop(
   for (let i = 0; i < maxIterations; i++) {
     const lastTurn = i === maxIterations - 1; // force a plain answer on the last round
 
-    let response: Awaited<ReturnType<typeof provider.chat>>;
+    let response: any;
     try {
-      response = await provider.chat({
-        messages: messages as Parameters<typeof provider.chat>[0]['messages'],
+      response = await workshopChat(role, {
+        messages,
         tools: toolsSchema,
         tool_choice: lastTurn ? 'none' : 'auto',
       });
     } catch (e: unknown) {
       return `خطأ في الاتصال بالنموذج: ${e instanceof Error ? e.message : String(e)}`;
+    }
+
+    const usage = response?.usage;
+    if (usage) {
+      console.log(
+        `[tokens] ${response.__model} round ${i + 1}: prompt=${usage.prompt_tokens} completion=${usage.completion_tokens} tools=${toolsSchema.length}`,
+      );
     }
 
     const choice = response.choices?.[0];

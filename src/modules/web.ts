@@ -41,7 +41,8 @@ const FILES: Record<string, string> = { "/": "index.html",
   "/anzu-raven.js": "anzu-raven.js",
   "/anzu-ui.js": "anzu-ui.js",
   "/anzu-voice.js": "anzu-voice.js",
-  "/anzu-inbox.js": "anzu-inbox.js"};
+  "/anzu-inbox.js": "anzu-inbox.js",
+  "/anzu-health.js": "anzu-health.js"};
 const TYPES: Record<string, string> = { 
   ".html": "text/html; charset=utf-8",
   ".svg": "image/svg+xml",
@@ -60,6 +61,7 @@ const ALLOWED = [
   // Read-only
   "list", "goals", "reminders", "habits", "backups", "log", "notify", "autostart",
   "brief", "weekly", "evening", "inbox",
+  "water", "sleep", "workout", "mood", "meal", "health",
 ];
 
 // A secret made fresh at every start. Only this page receives it, inside its own HTML.

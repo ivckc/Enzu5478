@@ -102,7 +102,7 @@ label{display:block;margin:8px 0;color:var(--mu);font-size:13px}label input,labe
 <div class="vbar"><span>الصوت غير مفعّل بعد</span><div class="wv" id="wv2"></div><div class="mic">🎤</div></div>
 <script>
 const T={calm:{d:{g:"أنا هنا. اكتب أو اضغط على أحد الأقسام.",a:"تنبيه الآن"},c:{g:"شنو عندنا اليوم؟",a:"إشعار. لا تتجاهله."}}};
-const MODS=[["home","الرئيسية"],["anzu","أنزو"],["tasks","المهام"],["habits","العادات"],["goals","الأهداف"],["settings","الإعدادات"]];
+const MODS=[["home","الرئيسية"],["anzu","أنزو"],["tasks","المهام"],["habits","العادات"],["goals","الأهداف"],["health","الصحة"],["settings","الإعدادات"]];
 const SOON=[];let flt="all";
 let S=null,view=(location.hash.slice(1)||"home").split("/")[0],seen=null,alertUntil=0,persona=localStorage.getItem("persona")||"d";
 const $=id=>document.getElementById(id),esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -207,7 +207,7 @@ function anzuView(tk,gl){const f=guard([S.activity,chat,shortcuts,gl,prefs.aut])
  $("main").innerHTML=`<p class="cap">CHAT // ANZU</p><h1>أنزو</h1>${bars()}<div class="chat" id="chatbox">${B}</div><div class="chips2">${shortcuts.map((s,i)=>`<span class="chip tb" data-b="csc" data-i="${i}">${esc(s.label)}</span>`).join("")}</div><div class="addb"><input id="chin" placeholder="اكتب أمرًا…" value="${esc(chatDraft)}"><button data-b="csend">إرسال</button></div>`;
  $("side").innerHTML=`<p class="cap">LIVE ACTIVITY</p><h1 style="font-size:20px">شنو يسوي أنزو الآن</h1>${act(6)}<p class="cap">APPROVAL</p>${agentAsk?`<div class="ask">${esc(agentAsk.text)}<br><button data-a="yes">موافق</button> <button data-a="no">لا</button></div>`:ask?`<div class="ask">${esc(ask.text.replace(" Type yes to confirm.",""))}<br><button data-a="yes">موافق</button> <button data-a="no">لا</button></div>`:"<p class='mu'>لا شيء ينتظر موافقتك.</p>"}<p class="cap">AUTONOMY</p><p>المستوى: <b>${AUT[prefs.aut]}</b></p><small class="mu">مستوى الاستقلالية مُفعّل الآن. الحذف يطلب تأكيدك دائمًا.</small><p class="cap">CONTEXT</p><div class="chips2">${gl.map(g=>`<span class="chip">${esc(g.title)}</span>`).join("")}</div>`;
  const cb=$("chatbox");if(cb)cb.scrollTop=cb.scrollHeight;back(f)}
-const ALLOWED=["add","done","reopen","link","rename task","delete task","priority","due","sub add","sub done","sub reopen","sub delete","goal","rename goal","delete goal","remind","unremind","habit add","habit check","habit uncheck","habit rename","habit note","habit delete","backup","restore","notify setup","notify show","notify test","notify on","notify off","autostart on","autostart off","list","goals","reminders","habits","backups","log","notify","autostart","brief","weekly","evening","inbox"];
+const ALLOWED=["add","done","reopen","link","rename task","delete task","priority","due","sub add","sub done","sub reopen","sub delete","goal","rename goal","delete goal","remind","unremind","habit add","habit check","habit uncheck","habit rename","habit note","habit delete","backup","restore","notify setup","notify show","notify test","notify on","notify off","autostart on","autostart off","list","goals","reminders","habits","backups","log","notify","autostart","brief","weekly","evening","inbox","water","sleep","workout","mood","meal","health"];
 function isKnownCommand(t){const a=t.replace(/^ask\s+/i,"").trim();return ALLOWED.some(n=>a===n||a.startsWith(n+" "))}
 // Session memory: the last ~10 messages of THIS page session, kept in memory only (never on disk).
 let sessionMsgs=[];
@@ -326,6 +326,7 @@ document.addEventListener("click",e=>{const el=e.target.closest("[data-b]");if(!
  else if(b=="nclr"){chat=[];SV("chat",chat);msg={ok:true,t:"تم مسح المحادثات",until:Date.now()+4000};redraw()}
  else if(b=="radd"){const rd=$("rd").value,rt=$("rtm").value;if(rd&&rt)remAdd(`${rd} ${rt}`);else if(rt)remAdd(`at ${rt}`);else{msg={ok:false,t:"اختر الساعة (والتاريخ إن أردت)",until:Date.now()+4000};redraw()}}
  else if(b=="rq")remAdd(d.w)
+ else if(b.slice(0,2)=="hl"&&typeof healthClick=="function")healthClick(b,d,el)
  else if(b=="inpref"){AnzuInbox.setPref(d.i,!AnzuInbox.prefs()[d.i]).then(()=>redraw())}
  else if(b=="inopen")AnzuInbox.open()
  else if(b=="intest")AnzuInbox.test()
@@ -351,6 +352,7 @@ function draw(){if(!S)return;const slot=view=="home"?$("hr"):$("sr");if($("raven
  if(view=="anzu"){m=`<p class="cap">ANZU // CHAT</p><h1>أنزو</h1><div class="row"><b>المحادثة مع أنزو</b><small>الذكاء الاصطناعي متصل — اكتب أو اضغط على الأقسام</small></div>`;}
  if(view=="habits"){m=`<p class="cap">HABITS</p><h1>العادات</h1><div class="row"><b>العادات قريبًا</b><small>سنصمّمها بعد المهام</small></div>`;}
  if(view=="tasks"){tasksView(tk,gl,rm);return;}
+ if(view=="health"){if(typeof healthView=="function")healthView();return;}
  if(["anzu","habits","goals","settings"].includes(view)){others(view,tk,gl,rm);return;}
  if(view=="goals"){m=`<p class="cap">GOALS // ${gl.length}</p><h1>الأهداف</h1>`+(gl.length?gl.map(g=>{const k=tk.filter(t=>t.goalId==g.id),d=k.filter(t=>t.done).length;return `<div class="row"><b>${esc(g.title)}</b><span class="chip">${d} من ${k.length}</span></div>`}).join(""):"<p>لا أهداف بعد.</p>");}
  if(view=="settings"){const n=S.notify||{};m=`<p class="cap">SETTINGS</p><h1>الإعدادات</h1>
@@ -370,6 +372,7 @@ function hash(){if(document.activeElement)document.activeElement.blur();lastSig=
 <script src="/anzu-raven.js"></script>
 <script src="/anzu-ui.js"></script>
 <script src="/anzu-inbox.js"></script>
+<script src="/anzu-health.js"></script>
 <script src="/anzu-voice.js"></script>
 <script>
 const anzuState = () => fetch("/api/state").then(r => r.json());
