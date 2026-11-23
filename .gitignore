@@ -16,3 +16,9 @@ habits.json
 data/
 *.db
 *.sqlite
+brief.json
+inbox.json
+weekly.json
+*.db
+*.sqlite
+data/
