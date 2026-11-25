@@ -370,6 +370,7 @@ async function poll(){try{S=await (await fetch("/api/state")).json();offline=fal
 function hash(){if(document.activeElement)document.activeElement.blur();lastSig="";const h=location.hash.slice(1).split("/");view=h[0]||"home";force=h[1]||null;draw()}addEventListener("hashchange",hash);wv.innerHTML="<i></i>".repeat(34);$("wv2").innerHTML="<i></i>".repeat(30);hash();clock();setInterval(clock,1000);poll();setInterval(poll,3000);setInterval(draw,1000);
 </script>
 <script src="/anzu-raven.js"></script>
+<script src="/anzu-stars.js"></script>
 <script src="/anzu-ui.js"></script>
 <script src="/anzu-inbox.js"></script>
 <script src="/anzu-health.js"></script>
@@ -386,8 +387,100 @@ AnzuUI.init({
     goals: () => anzuState().then(s => s.goals.map(g => { const k = s.tasks.filter(t => t.goalId === g.id); return { title: g.title, progress: k.length ? Math.round(100 * k.filter(t => t.done).length / k.length) : 0 }; }))
   },
   onNavigate: (w) => { if (w === "home") AnzuUI.home(); go(w === "chat" ? "anzu" : w); },
-  onUnknown: (text) => { go("anzu"); chatSend(text); }
+  onUnknown: (text) => { if (text && document.body.classList.contains("home")) { homeAsk(); chatSend(text); } else { go("anzu"); chatSend(text); } }
 });
 AnzuVoice.init({ ui: AnzuUI, root: "#home-view" });
+
+// ----- reply panel on the home screen: the answer shows over the raven instead of jumping to the chat -----
+(function () {
+  const root = document.getElementById("home-view");
+  if (!root) return;
+  const panel = document.createElement("div");
+  panel.id = "home-reply";
+  panel.setAttribute("role", "status");
+  panel.setAttribute("aria-live", "polite");
+  panel.innerHTML =
+    '<div class="hrp-top"><span class="hrp-cap">أنزو</span><button type="button" class="hrp-x" aria-label="إغلاق">✕</button></div>' +
+    '<div class="hrp-body"></div><div class="hrp-act"></div>';
+  document.body.appendChild(panel);
+  const body = panel.querySelector(".hrp-body");
+  const act = panel.querySelector(".hrp-act");
+  let asked = false, askedAt = 0, key = "";
+
+  // newest answer after the newest question (null while ANZU is still working on it)
+  function latestReply() {
+    for (let i = chat.length - 1; i >= 0; i--) {
+      const m = chat[i];
+      if (m.w === "u") return null;
+      if (m.w === "a" && !(m.t && m.t.indexOf("انتظر") === 0)) return m;
+    }
+    return null;
+  }
+  const textOf = (m) => (m.lines ? m.lines.join("\n") : (m.t || ""));
+
+  function addButton(label, fn, main) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "hrp-btn" + (main ? " main" : "");
+    b.textContent = label;
+    b.addEventListener("click", fn);
+    act.appendChild(b);
+  }
+  function close() { asked = false; render(); }
+
+  function render() {
+    const onHome = document.body.classList.contains("home");
+    if (!onHome || root.dataset.mode === "focus") asked = false;                 // left home or a card opened
+    if (document.querySelector('.avc-bubble[data-show="1"], .avc-confirm[data-show="1"]')) asked = false; // the voice bubble is talking
+    if (!panel.isConnected) document.body.appendChild(panel);
+
+    let mode = "hidden", text = "";
+    if (asked) {
+      if (agentAsk) { mode = "ask"; text = agentAsk.text || ""; }
+      else {
+        const m = latestReply();
+        if (m) { mode = "reply"; text = textOf(m); }
+        else if (Date.now() - askedAt < 90000) mode = "busy";
+        else asked = false;
+      }
+    }
+    const k = mode + "|" + text;
+    if (k !== key) {
+      key = k;
+      body.textContent = "";
+      act.textContent = "";
+      if (mode === "busy") {
+        const d = document.createElement("span");
+        d.className = "hrp-dots";
+        d.innerHTML = "<i></i><i></i><i></i>";
+        body.appendChild(d);
+      } else if (mode !== "hidden") {
+        text.split("\n").forEach((ln) => {
+          if (!ln.trim()) return;
+          const d = document.createElement("div");
+          d.textContent = ln;
+          body.appendChild(d);
+        });
+      }
+      if (mode === "ask") {
+        addButton("موافق", () => agentAnswer(true), true);
+        addButton("رفض", () => agentAnswer(false), false);
+      } else if (mode === "reply") {
+        addButton("فتح المحادثة", () => { asked = false; go("anzu"); }, false);
+      }
+    }
+    const show = mode !== "hidden";
+    panel.classList.toggle("on", show);
+    root.classList.toggle("has-reply", show);
+  }
+
+  panel.querySelector(".hrp-x").addEventListener("click", close);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && asked) close(); });
+  window.homeAsk = function () {
+    document.querySelectorAll(".avc-bubble, .avc-confirm").forEach((b) => { b.dataset.show = "0"; }); // hide an old voice bubble
+    asked = true; askedAt = Date.now(); key = ""; render();
+  };
+  setInterval(render, 250);
+})();
 </script>
 </body></html>
